@@ -14,7 +14,7 @@ module pc
 	input wire [31: 0]		inst_i,			//inst_sram_rdata
 	input wire				if_in_delay_slot_i,
 
-	output wire				if_iram_ren_o,  //inst_sram_en
+	output wire				inst_sram_en,  
 	output wire [31: 0] 	if_pc_o,		//current pc
 	output wire [31: 0] 	if_next_pc_o,	//inst_sram_addr
 	output wire [31: 0]		if_inst_o,		//current inst
@@ -37,7 +37,7 @@ wire[31:0] 	inst_next;
 
 assign inst_sram_wen   = 4'h0;
 assign inst_sram_wdata = 32'b0;
-assign if_iram_ren_o   =!(if_stall_i||if_flush_i) ;
+assign inst_sram_en   =!(if_stall_i||if_flush_i) ;
 
 assign pc_next 		=  !rst_n	? 32'hBFB_FFFC		:			   
 				   		// stall	? pc_next 			:
