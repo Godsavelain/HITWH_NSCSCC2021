@@ -6,7 +6,7 @@ module pc
 	input wire				rst_n,
 	input wire 				if_flush_i,			//from controller
 	input wire				if_stall_i,			//from controller
-	// input wire				usrmode,
+	//input wire				usrmode,
 	input wire				branch_en,
 
 	input wire [31: 0]		flush_pc_i,
@@ -18,7 +18,7 @@ module pc
 	output wire [31: 0] 	if_pc_o,		//current pc
 	output wire [31: 0] 	if_next_pc_o,	//inst_sram_addr
 	output wire [31: 0]		if_inst_o,		//current inst
-	//output wire				if_stallreq_o,	//to controller
+	//output wire			if_stallreq_o,	//to controller
 	output wire				if_in_delay_slot_o,
 	//output wire [`Excs] 	id_excs_o,		//exceptions
 
@@ -57,7 +57,7 @@ assign inst_next 	= 	!rst_n 	? 0					:
 
 assign en 			= 	~ if_stall_i;
 
-DFFRE #(.WIDTH(32))		pc_result_next			(.d(pc_next), .q(if_pc_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(32))		pc_result_next			(.d(pc_next), .q(if_pc_o), .en(en), .clk(clk), .rst_n(1));
 DFFRE #(.WIDTH(32))		inst_result_next		(.d(inst_next), .q(if_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		delayslot_result_next	(.d(if_in_delay_slot_i), .q(if_in_delay_slot_o), .en(en), .clk(clk), .rst_n(rst_n));
 

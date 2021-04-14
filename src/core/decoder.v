@@ -10,7 +10,7 @@ module decoder
 	//from if
 	input wire [31: 0] 		id_pc_i,
 	input wire [31: 0] 		id_inst_i,
-	input wire 				id_in_delay_slot_i,
+	input wire 				id_inslot_i,
 
 	//from regfile
 	input wire [31: 0]		id_reg1data_i,
@@ -30,6 +30,7 @@ module decoder
  	//to regfile
  	output wire [ 4: 0]		id_reg1addr_o,
  	output wire [ 4: 0]		id_reg2addr_o,	
+ 	output wire				id_nofwd_o,// for load stall
 
  	output wire [31: 0]		id_pc_o,
  	output wire [31: 0]		id_opr1_o,
@@ -89,7 +90,6 @@ module decoder
 	wire        src1_is_pc;
 	wire        src2_is_8;
 	wire		src2_is_joffset;
-	wire		dst_is_rt;
 
 	wire [ 5: 0] opcode;
     wire [ 4: 0] rs;
@@ -109,25 +109,39 @@ module decoder
     wire [31: 0] sa_ext;	//used for shift
     wire [31: 0] j_target;	//j and jal
     wire [31: 0] b_target;	//branch target
+    wire		 waddr_is_31;// write GPR addr is 31
+    wire		 waddr_is_rt;// write GPR addr is rt
+    wire 		 mul_div;
 
-    assign opcode    = id_inst_i[31:26];
-    assign rs        = id_inst_i[25:21];
-    assign rt        = id_inst_i[20:16];
-    assign rd        = id_inst_i[15:11];
-    assign sa        = id_inst_i[10: 6];
-    assign funct     = id_inst_i[ 5: 0];
-    assign imme      = id_inst_i[15: 0];
-    assign j_offset  = id_inst_i[25: 0];
-    assign sel       = id_inst_i[ 2: 0];
+    assign opcode    	= id_inst_i[31:26];
+    assign rs        	= id_inst_i[25:21];
+    assign rt        	= id_inst_i[20:16];
+    assign rd        	= id_inst_i[15:11];
+    assign sa        	= id_inst_i[10: 6];
+    assign funct     	= id_inst_i[ 5: 0];
+    assign imme      	= id_inst_i[15: 0];
+    assign j_offset  	= id_inst_i[25: 0];
+    assign sel       	= id_inst_i[ 2: 0];
 
-    assign pcp4 	 = id_pc_i + 4;
-    assign zero_ext  = {16'h0, imme};
-    assign sign_ext  = {{16{imme[15]}}, imme};
-    assign lui_ext	 = {imme, 16'h0};
-    assign sa_ext	 = {27'h0, sa};
+    assign pcp4 	 	= id_pc_i + 4;
+    assign zero_ext  	= {16'h0, imme};
+    assign sign_ext  	= {{16{imme[15]}}, imme};
+    assign lui_ext	 	= {imme, 16'h0};
+    assign sa_ext	 	= {27'h0, sa};
 
-    assign j_target  = {pcp4[31:28], j_offset, 2'b00};
-    assign b_target  = pcp4 + {sign_ext[29: 0], 2'b00};
+    assign j_target  	= {pcp4[31:28], j_offset, 2'b00};
+    assign b_target  	= pcp4 + {sign_ext[29: 0], 2'b00};
+
+    assign waddr_is_31	= inst_bgezal | inst_bltzal | inst_jal  | inst_jalr;
+    assign waddr_is_rt	= inst_addi   | inst_addiu  | inst_slti | inst_sltiu 
+    					| inst_andi   | inst_lui    | inst_ori  | inst_xori 
+    					| inst_lb 	  | inst_lbu 	| inst_lh 	| inst_lhu
+    					| inst_lw 	  | inst_mfc0;
+    assign mul_div 		= inst_div 	  | inst_divu 	|inst_mult 	|inst_multu;
+
+    //to regfile
+	assign id_reg1addr_o	=	rs;
+	assign id_reg2addr_o	=	rt;
 
 
 //arithmetic
@@ -213,28 +227,73 @@ module decoder
 	decoder_5_32 u_dec3(.in(rt  ), .out(rt_d  ));
 	decoder_5_32 u_dec4(.in(rd  ), .out(rd_d  ));
 
-//decode 
+
+
+//decode
+	assign inst_add    = 0;
+	assign inst_addi   = 0;
+	assign inst_addiu  = op_d[`OP_ADDIU]; 
     assign inst_addu   = op_d[`OP_SPECIAL] & func_d[6'h21] & sa_d[5'h00];
+    assign inst_sub    = 0;
 	assign inst_subu   = op_d[`OP_SPECIAL] & func_d[6'h23] & sa_d[5'h00];
 	assign inst_slt    = op_d[`OP_SPECIAL] & func_d[6'h2a] & sa_d[5'h00];
+	assign inst_slti   = 0;
 	assign inst_sltu   = op_d[`OP_SPECIAL] & func_d[6'h2b] & sa_d[5'h00];
+	assign inst_sltiu  = 0;
+	assign inst_div    = 0;
+	assign inst_divu   = 0;
+	assign inst_mult   = 0;
+	assign inst_multu  = 0;
 	assign inst_and    = op_d[`OP_SPECIAL] & func_d[6'h24] & sa_d[5'h00];
+	assign inst_andi   = 0;
+	assign inst_lui    = op_d[`OP_LUI] & rs_d[5'h00];
 	assign inst_or     = op_d[`OP_SPECIAL] & func_d[6'h25] & sa_d[5'h00];
+	assign inst_ori    = 0;
 	assign inst_xor    = op_d[`OP_SPECIAL] & func_d[6'h26] & sa_d[5'h00];
+	assign inst_xori   = 0;
 	assign inst_nor    = op_d[`OP_SPECIAL] & func_d[6'h27] & sa_d[5'h00];
 	assign inst_sll    = op_d[`OP_SPECIAL] & func_d[6'h00] & rs_d[5'h00];
+	assign inst_sllv   = 0;
 	assign inst_srl    = op_d[`OP_SPECIAL] & func_d[6'h02] & rs_d[5'h00];
+	assign inst_srlv   = 0;
 	assign inst_sra    = op_d[`OP_SPECIAL] & func_d[6'h03] & rs_d[5'h00];
-	assign inst_addiu  = op_d[`OP_ADDIU];
-	assign inst_lui    = op_d[`OP_LUI] & rs_d[5'h00];
+	assign inst_srav   = 0;
+
+	assign inst_mfhi   = 0;
+	assign inst_mflo   = 0;
+	assign inst_mthi   = 0;
+	assign inst_mtlo   = 0;
+	
+	
+	assign inst_lb     = 0;
+	assign inst_lbu    = 0;
+	assign inst_lh     = 0;
+	assign inst_lhu     = 0;
 	assign inst_lw     = op_d[`OP_LW];
+	assign inst_sb     = 0;
+	assign inst_sh     = 0;
 	assign inst_sw     = op_d[`OP_SW];
 
 	//branch
 	assign inst_beq    = op_d[`OP_BEQ];
 	assign inst_bne    = op_d[`OP_BNE];
+	assign inst_bgez   = 0;
+	assign inst_bgtz   = 0;
+	assign inst_blez   = 0;
+	assign inst_bltz   = 0;
+	assign inst_bgezal = 0;
+	assign inst_bltzal = 0;
+	assign inst_j 	   = 0;
 	assign inst_jal    = op_d[`OP_JAL];
 	assign inst_jr     = op_d[`OP_SPECIAL] & func_d[6'h08] & rt_d[5'h00] & rd_d[5'h00] & sa_d[5'h00];
+	assign inst_jalr   = 0;
+
+	assign inst_eret   = 0;
+	assign inst_mfc0   = 0;
+	assign inst_mtc0   = 0;
+
+	assign inst_break  = 0;
+	assign inst_syscall= 0;
 
 	assign alu_op[ 0] = inst_addu | inst_addiu | inst_lw | inst_sw | inst_jal;
 	assign alu_op[ 1] = inst_subu;
@@ -250,31 +309,36 @@ module decoder
 	assign alu_op[11] = inst_lui;
 
 //transfer info to EX stage
-	assign id_pc_next 		= id_pc_o;
- 	assign id_wren_next 	= id_wren_o;
- 	assign id_wdata_next	= id_wdata_o;
+	assign id_pc_next 		= id_pc_i;
+ 	assign id_wren_next 	= ~mul_div 	& ~inst_beq & ~inst_bne & ~inst_bgez & 
+ 							  ~inst_bgtz & ~inst_blez & ~inst_bltz & ~inst_j &
+ 							  ~inst_mthi & ~inst_mtlo & ~inst_break & ~inst_syscall &
+ 							  ~inst_sw   & ~inst_sh   & ~inst_sb & ~inst_eret & ~inst_mtc0;
  	assign id_aluop_next	= alu_op;
 
 	assign src1_is_sa   	= inst_sll   | inst_srl | inst_sra;
 	assign src1_is_pc   	= inst_jal;
 	assign src2_is_imm  	= inst_addiu | inst_lui | inst_lw | inst_sw;
 	assign src2_is_8    	= inst_jal;
-	assign dst_is_rt    	= inst_addiu | inst_lui | inst_lw;
+
 
 	//to next stage
-	assign id_opr1_next 	= src1_is_sa ? sa_ext 	   :
-						  	  src1_is_pc ? id_pc_next  :
+	assign id_opr1_next 	= src1_is_sa 	  ? sa_ext 	   :
+						  	  src1_is_pc 	  ? id_pc_next  :
 						  	  id_reg1data_i;
 
-	assign id_opr2_next 	= src2_is_imm ? sign_ext   :
-						      src2_is_8   ? 32'd8  	   :
+	assign id_opr2_next 	= src2_is_imm 	  ? sign_ext   :
+						      src2_is_8   	  ? 32'd8  	   :
 						      id_reg2data_i;
 
-	assign id_waddr_next 	= inst_jal 	  ? 5'd31 	   :
-						      dst_is_rt	  ? rt 		   :
+	assign id_waddr_next 	= waddr_is_31 	  	  ? 5'd31 	   :
+						      waddr_is_rt	  ? rt 		   :
 						      rd;
 
 	assign id_offset_next	= sign_ext;
+
+	assign id_inslot_next   = id_inslot_i;
+	assign id_inst_next 	= id_inst_i;
 	//for branch outputs
 
 
