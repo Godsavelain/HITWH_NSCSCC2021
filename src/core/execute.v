@@ -3,7 +3,7 @@
 module execute
 (
 	input wire				clk,
-	input wire				rst,
+	input wire				rst_n,
 	input wire 				ex_flush_i,			//from controller
 	input wire				ex_stall_i,
 
@@ -15,6 +15,7 @@ module execute
  	input wire 				ex_wren_i,
  	input wire [ 4: 0]		ex_waddr_i,
  	input wire [31: 0]		ex_offset_i,
+ 	input wire 				ex_nofwd_i,
 
  	input wire [`AOP] 		ex_aluop_i,
  	input wire [`MDOP] 		ex_mduop_i,
@@ -32,8 +33,7 @@ module execute
     output wire				ex_wren_o,
     output wire [ 4: 0] 	ex_waddr_o,
     output wire [31: 0] 	ex_wdata_o,
-
-    //output wire [ 1: 0]		ex_memsize_o,
+    output wire 			ex_nofwd_o,
     
 
     //to alu
@@ -42,7 +42,7 @@ module execute
     output wire [31: 0]		ex_opr1_o,
  	output wire [31: 0]		ex_opr2_o,
 
- 	//to mmu
+ 	//to mem
  	output wire				ex_menen_o,		//data_sram_en
 	output wire [ 3: 0]		ex_memwen_o,	//data_sram_wen	
 	output wire [31: 0] 	ex_memaddr_o,	//data_sram_addr
@@ -50,8 +50,10 @@ module execute
 
     output wire [31: 0]		ex_inst_o,
     output wire 			ex_inslot_o,
- 	output wire 			ex_stallreq_o
+ 	output wire 			ex_stallreq_o,
 
+ 	//bypass 
+ 	output wire				ex_wdata_bp_o
 
 );
 	
@@ -64,6 +66,7 @@ module execute
     wire 		[31: 0]		ex_inst_next;
     wire					ex_inslot_next;
     wire		[`MMOP]		ex_memop_next;
+    wire 					ex_nofwd_next;
 
 
 //useful values
@@ -99,16 +102,29 @@ module execute
 	assign ex_inst_next		= ex_inst_i;
 	assign ex_inslot_next   = ex_inslot_i;
 	assign ex_memop_next	= ex_memop_i;
+	assign ex_nofwd_next	= ex_nofwd_i;
+
+//to bypass
+	assign ex_wdata_bp_o	= ex_wdata_next;
 
 
 
 //DFFREs
-DFFRE #(.WIDTH(32))		wren_next			(.d(ex_wren_next), .q(ex_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(32))		waddr_next			(.d(ex_waddr_next), .q(ex_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))		wren_next			(.d(ex_wren_next), .q(ex_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(5))		waddr_next			(.d(ex_waddr_next), .q(ex_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		wdata_next			(.d(ex_wdata_next), .q(ex_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		inst_next			(.d(ex_inst_next), .q(ex_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(32))		inslot_next			(.d(ex_inslot_next), .q(ex_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))		inslot_next			(.d(ex_inslot_next), .q(ex_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))		nofwd_next			(.d(ex_nofwd_next), .q(ex_nofwd_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`MMOP_W))		memop_next			(.d(ex_memop_next), .q(ex_memop_o), .en(en), .clk(clk), .rst_n(rst_n));
+
+//未完成
+assign ex_stallreq_o = 0;
+
+assign ex_menen_o = 0;	    //data_sram_en
+assign ex_memwen_o = 0;	    //data_sram_wen	
+assign ex_memaddr_o = 0;	//data_sram_addr
+assign ex_memwdata_o = 0;   //data_sram_wdata
 
 
 endmodule

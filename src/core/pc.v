@@ -22,7 +22,7 @@ module pc
 	output wire				if_in_delay_slot_o,
 	//output wire [`Excs] 	id_excs_o,		//exceptions
 
-	//constants
+	//constants can't write instram
 	output wire [ 3: 0] 	inst_sram_wen  ,
     output wire [31: 0] 	inst_sram_wdata
 

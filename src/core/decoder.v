@@ -28,10 +28,12 @@ module decoder
  	output wire [31: 0] 	id_inst_o,
  	output wire 		 	id_inslot_o,
  	//to regfile
+ 	output wire 			id_ren1_o,
+ 	output wire 			id_ren2_o,
  	output wire [ 4: 0]		id_reg1addr_o,
- 	output wire [ 4: 0]		id_reg2addr_o,	
- 	output wire				id_nofwd_o,// for load stall
+ 	output wire [ 4: 0]		id_reg2addr_o,
 
+ 	output wire				id_nofwd_o,// for load stall
  	output wire [31: 0]		id_pc_o,
  	output wire [31: 0]		id_opr1_o,
  	output wire [31: 0]		id_opr2_o,
@@ -62,6 +64,8 @@ module decoder
 
  	wire [31: 0]		id_opr1_next;
  	wire [31: 0]		id_opr2_next;
+ 	wire 				id_ren1_next;
+ 	wire 				id_ren2_next;
  	wire [31: 0]		id_offset_next;
  	wire [31: 0]		id_pc_next;	
  	wire 				id_wren_next;
@@ -310,6 +314,19 @@ module decoder
 
 //transfer info to EX stage
 	assign id_pc_next 		= id_pc_i;
+	assign id_ren1_next		= inst_add | inst_addi | inst_addu | inst_addiu | inst_sub | inst_subu
+							| inst_slt | inst_slti | inst_sltu | inst_sltiu | inst_div | inst_divu
+							| inst_mult| inst_multu| inst_and  | inst_andi  | inst_nor | inst_or
+							| inst_ori | inst_xori | inst_sllv | inst_srav  | inst_srlv| inst_beq
+							| inst_bne | inst_bgez | inst_bgtz | inst_blez  | inst_bltz| inst_bgezal
+							| inst_bltzal|inst_jr  | inst_jalr | inst_mthi  | inst_mtlo ;
+
+	assign id_ren2_next		= inst_add | inst_addu | inst_sub  | inst_subu  | inst_sra  | inst_sll
+							| inst_slt | inst_sltu | inst_div  | inst_divu  | inst_srl
+							| inst_mult| inst_multu| inst_and  | inst_nor   | inst_or
+							| inst_sllv| inst_srav | inst_srlv | inst_beq
+							| inst_bne | inst_sb   | inst_sh   | inst_sw    | inst_mtc0 ;
+
  	assign id_wren_next 	= ~mul_div 	& ~inst_beq & ~inst_bne & ~inst_bgez & 
  							  ~inst_bgtz & ~inst_blez & ~inst_bltz & ~inst_j &
  							  ~inst_mthi & ~inst_mtlo & ~inst_break & ~inst_syscall &
@@ -347,6 +364,10 @@ module decoder
 //DFFREs
 DFFRE #(.WIDTH(32))			opr1_next			(.d(id_opr1_next), .q(id_opr1_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			opr2_next			(.d(id_opr2_next), .q(id_opr2_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(32))			ren1_next			(.d(id_ren1_next), .q(id_ren1_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(32))			ren2_next			(.d(id_ren2_next), .q(id_ren2_o), .en(en), .clk(clk), .rst_n(rst_n));
+
+
 DFFRE #(.WIDTH(32))			offset_next			(.d(id_offset_next), .q(id_offset_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			pc_next				(.d(id_pc_next), .q(id_pc_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			wren_next			(.d(id_wren_next), .q(id_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
@@ -362,5 +383,22 @@ DFFRE #(.WIDTH(`COP_W))		cacheop_next		(.d(id_cacheop_next), .q(id_cacheop_o), .
 
 DFFRE #(.WIDTH(1))			c0wen_next			(.d(id_c0wen_next), .q(id_c0wen_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			c0ren_next			(.d(id_c0ren_next), .q(id_c0ren_o), .en(en), .clk(clk), .rst_n(rst_n));
+
+//尚未实现
+assign 				id_branch_en_o = 0;
+assign				id_branch_pc_o = 0;
+assign				id_next_inslot_o = 0;
+
+assign 				id_nofwd_o = 0;
+
+assign 				id_mduop_o = 0;
+assign 				id_memop_o = 0;
+assign 				id_tlbop_o = 0;
+assign 				id_cacheop_o = 0;
+assign 				id_c0wen_o = 0;
+assign 				id_c0ren_o = 0;
+assign 				id_c0addr_o = 0;
+
+assign   			id_stallreq_o = 0;
 
 endmodule
