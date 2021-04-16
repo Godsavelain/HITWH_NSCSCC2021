@@ -93,6 +93,7 @@ module decoder
 	wire        src1_is_sa;
 	wire        src1_is_pc;
 	wire        src2_is_8;
+	wire 		src2_is_imm;
 	wire		src2_is_joffset;
 
 	wire [ 5: 0] opcode;
@@ -252,7 +253,7 @@ module decoder
 	assign inst_andi   = 0;
 	assign inst_lui    = op_d[`OP_LUI] & rs_d[5'h00];
 	assign inst_or     = op_d[`OP_SPECIAL] & func_d[6'h25] & sa_d[5'h00];
-	assign inst_ori    = 0;
+	assign inst_ori    = op_d[`OP_ORI];
 	assign inst_xor    = op_d[`OP_SPECIAL] & func_d[6'h26] & sa_d[5'h00];
 	assign inst_xori   = 0;
 	assign inst_nor    = op_d[`OP_SPECIAL] & func_d[6'h27] & sa_d[5'h00];
@@ -305,8 +306,8 @@ module decoder
 	assign alu_op[ 3] = inst_sltu;
 	assign alu_op[ 4] = inst_and;
 	assign alu_op[ 5] = inst_nor;
-	assign alu_op[ 6] = inst_or;
-	assign alu_op[ 7] = inst_xor;
+	assign alu_op[ 6] = inst_or   | inst_ori;
+	assign alu_op[ 7] = inst_xor  | inst_xori;
 	assign alu_op[ 8] = inst_sll;
 	assign alu_op[ 9] = inst_srl;
 	assign alu_op[10] = inst_sra;
@@ -335,7 +336,9 @@ module decoder
 
 	assign src1_is_sa   	= inst_sll   | inst_srl | inst_sra;
 	assign src1_is_pc   	= inst_jal;
-	assign src2_is_imm  	= inst_addiu | inst_lui | inst_lw | inst_sw;
+	assign src2_is_imm  	= inst_addi  | inst_addiu | inst_slti  | inst_sltiu | inst_andi | inst_lui 
+							| inst_ori 	 | inst_xori  |inst_lb     | inst_lbu   | inst_lh   | inst_lhu 
+							| inst_lw    | inst_sw    | inst_sh    | inst_sb; 
 	assign src2_is_8    	= inst_jal;
 
 
@@ -364,14 +367,15 @@ module decoder
 //DFFREs
 DFFRE #(.WIDTH(32))			opr1_next			(.d(id_opr1_next), .q(id_opr1_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			opr2_next			(.d(id_opr2_next), .q(id_opr2_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(32))			ren1_next			(.d(id_ren1_next), .q(id_ren1_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(32))			ren2_next			(.d(id_ren2_next), .q(id_ren2_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))			ren1_next			(.d(id_ren1_next), .q(id_ren1_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))			ren2_next			(.d(id_ren2_next), .q(id_ren2_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 DFFRE #(.WIDTH(32))			offset_next			(.d(id_offset_next), .q(id_offset_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			pc_next				(.d(id_pc_next), .q(id_pc_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			wren_next			(.d(id_wren_next), .q(id_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(5))			waddr_next			(.d(id_waddr_next), .q(id_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))			inslot_next			(.d(id_inslot_next), .q(id_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 DFFRE #(.WIDTH(32))			inst_next			(.d(id_inst_next), .q(id_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
 

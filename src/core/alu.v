@@ -10,31 +10,31 @@ module alu
 );
 
 //operations
-	wire [31: 0]	op_add;		
-	wire [31: 0]	op_sub;
-	wire [31: 0]	op_slt;// signed set less than
-	wire [31: 0]	op_sltu;
-	wire [31: 0]	op_and;
-	wire [31: 0]	op_nor;
-	wire [31: 0]	op_or;
-	wire [31: 0]	op_xor;
-	wire [31: 0]	op_sll;// logic shift left
-	wire [31: 0]	op_srl;// logic shift right
-	wire [31: 0]	op_sra;// arithmatic shift right
-	wire [31: 0]	op_lui;// load imm to high bits
+	wire 	op_add;		
+	wire 	op_sub;
+	wire 	op_slt;// signed set less than
+	wire 	op_sltu;
+	wire 	op_and;
+	wire 	op_nor;
+	wire 	op_or;
+	wire 	op_xor;
+	wire 	op_sll;// logic shift left
+	wire 	op_srl;// logic shift right
+	wire 	op_sra;// arithmatic shift right
+	wire 	op_lui;// load imm to high bits
 
 	assign   		op_add  = alu_op[ 0];
-	assign   		op_sub  = alu_op[ 0];
-	assign   		op_slt  = alu_op[ 0];
-	assign   		op_sltu = alu_op[ 0];
-	assign   		op_and  = alu_op[ 0];
-	assign   		op_nor  = alu_op[ 0];
-	assign   		op_or   = alu_op[ 0];
-	assign   		op_xor  = alu_op[ 0];
-	assign   		op_sll  = alu_op[ 0];
-	assign   		op_srl  = alu_op[ 0];
-	assign   		op_sra  = alu_op[ 0];
-	assign   		op_lui  = alu_op[ 0];
+	assign   		op_sub  = alu_op[ 1];
+	assign   		op_slt  = alu_op[ 2];
+	assign   		op_sltu = alu_op[ 3];
+	assign   		op_and  = alu_op[ 4];
+	assign   		op_nor  = alu_op[ 5];
+	assign   		op_or   = alu_op[ 6];
+	assign   		op_xor  = alu_op[ 7];
+	assign   		op_sll  = alu_op[ 8];
+	assign   		op_srl  = alu_op[ 9];
+	assign   		op_sra  = alu_op[10];
+	assign   		op_lui  = alu_op[11];
 
 	wire [31: 0]	add_sub_result;
 	wire [31: 0]	slt_result;
@@ -49,10 +49,10 @@ module alu
 	wire [31: 0]	lui_result;
 
 	//logic
-	assign 			and_result = opr1 & opr1;
-	assign 			or_result  = opr1 | opr1;
+	assign 			and_result = opr1 & opr2;
+	assign 			or_result  = opr1 | opr2;
 	assign 			nor_result = ~or_result;
-	assign 			xor_result = opr1 ^ opr1;
+	assign 			xor_result = opr1 ^ opr2;
 
 	assign 			lui_result = {opr2[15: 0] , 16'b0};
 

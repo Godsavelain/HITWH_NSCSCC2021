@@ -51,6 +51,7 @@ module execute
     output wire [31: 0]		ex_inst_o,
     output wire 			ex_inslot_o,
  	output wire 			ex_stallreq_o,
+ 	output wire [31: 0]		ex_pc_o,
 
  	//bypass 
  	output wire				ex_wdata_bp_o
@@ -58,7 +59,7 @@ module execute
 );
 	
 	wire					en;
-	assign  en 				= ~ ex_stall_i; ;
+	assign  en 				= ~ ex_stall_i; 
 	
     wire					ex_wren_next;
     wire 		[ 4: 0] 	ex_waddr_next;
@@ -67,6 +68,7 @@ module execute
     wire					ex_inslot_next;
     wire		[`MMOP]		ex_memop_next;
     wire 					ex_nofwd_next;
+    wire 		[31: 0]		ex_pc_next;
 
 
 //useful values
@@ -103,6 +105,7 @@ module execute
 	assign ex_inslot_next   = ex_inslot_i;
 	assign ex_memop_next	= ex_memop_i;
 	assign ex_nofwd_next	= ex_nofwd_i;
+	assign ex_pc_next		= ex_pc_i;
 
 //to bypass
 	assign ex_wdata_bp_o	= ex_wdata_next;
@@ -117,6 +120,7 @@ DFFRE #(.WIDTH(32))		inst_next			(.d(ex_inst_next), .q(ex_inst_o), .en(en), .clk
 DFFRE #(.WIDTH(1))		inslot_next			(.d(ex_inslot_next), .q(ex_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		nofwd_next			(.d(ex_nofwd_next), .q(ex_nofwd_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`MMOP_W))		memop_next			(.d(ex_memop_next), .q(ex_memop_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(32))		pc_next				(.d(ex_pc_next), .q(ex_pc_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 //未完成
 assign ex_stallreq_o = 0;

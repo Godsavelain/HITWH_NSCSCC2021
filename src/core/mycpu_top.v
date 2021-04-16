@@ -1,9 +1,10 @@
 `include "../defines.v"
 
-module mycpu
+module mycpu_top
 (
   input wire                clk,
   input wire                resetn,
+  input wire  [ 5: 0]       ext_int,
 
   //to/from instmem
   output wire                inst_sram_en,
@@ -70,10 +71,10 @@ wire [31: 0] opr2;
 wire [`AOP]  alu_op;
 
 //mem stage signals
-wire [31: 0] mem_memdata_i;
 wire         mem_nofwd_i;
 
 wire [31: 0] mem_inst_i;
+wire [31: 0] mem_pc_i;
 wire         mem_inslot_i;
 wire [`MMOP] mem_memop_i;
 
@@ -90,6 +91,7 @@ wire [31: 0] wb_wdata_i;
 wire [31: 0] wb_pc_i;
 wire [31: 0] wb_mem_addr_i;
 wire [31: 0] wb_mem_data_i;
+wire [31: 0] wb_inst_i;
 
 //to regfile
 wire         rf_ren1_i;
@@ -97,7 +99,7 @@ wire         rf_ren2_i;
 wire [ 4: 0] rf_raddr1_i;
 wire [ 4: 0] rf_raddr2_i;
 
-wire         rf_we;
+wire         rf_wren;
 wire         rf_waddr;
 wire         rf_wdata;
 
@@ -117,14 +119,14 @@ pc PC
 
   .flush_pc_i         (0                  ),
   .branch_pc_i        (branch_pc_i        ),
-  .inst_i             (if_inst_i          ),     
-  .if_in_delay_slot_i (if_in_delay_slot_i ),
+  .inst_i             (inst_sram_rdata    ),     
+  .if_inslot_i        (if_in_delay_slot_i ),
 
   .inst_sram_en       (inst_sram_en       ),  
   .if_pc_o            (id_pc_i            ),    
   .if_next_pc_o       (inst_sram_addr     ), 
   .if_inst_o          (id_inst_i          ),    
-  .if_in_delay_slot_o (id_inslot_i        ),
+  .if_inslot_o        (id_inslot_i        ),
 
   .inst_sram_wen      (inst_sram_wen      ),
   .inst_sram_wdata    (inst_sram_wdata    )
@@ -192,7 +194,7 @@ regfile REGFILE
   .rdata1             (id_reg1data_i      ),
   .rdata2             (id_reg2data_i      ),
  
-  .we                 (rf_we              ),
+  .we                 (rf_wren            ),
   .waddr              (rf_waddr           ),
   .wdata              (rf_wdata           ),
 
@@ -211,55 +213,124 @@ regfile REGFILE
 
 execute EXECUTE
 (
+  .clk                (clk                ),
+  .rst_n              (resetn             ),
+  .ex_flush_i         (0                  ),    
+  .ex_stall_i         (0                  ),
+
+  .ex_inst_i          (ex_inst_i          ),
+  .ex_inslot_i        (ex_inslot_i        ),
+  .ex_pc_i            (ex_pc_i            ),
+  .ex_opr1_i          (ex_opr1_i          ),
+  .ex_opr2_i          (ex_opr2_i          ),
+  .ex_wren_i          (ex_wren_i          ),
+  .ex_waddr_i         (ex_waddr_i         ),
+  .ex_offset_i        (ex_offset_i        ),
+  .ex_nofwd_i         (ex_nofwd_i         ),
+
+  .ex_aluop_i         (ex_aluop_i         ),
+  .ex_mduop_i         (ex_mduop_i         ),
+  .ex_memop_i         (ex_memop_i         ),
+  .ex_tlbop_i         (ex_tlbop_i         ),
+  .ex_cacheop_i       (ex_cacheop_i       ),
+
+  .ex_alures_i        (ex_alures_i        ),
+
+  .ex_c0wen_i         (ex_c0wen_i         ),
+  .ex_c0ren_i         (ex_c0ren_i         ),
+  .ex_c0addr_i        (ex_c0addr_i        ),
+
+    
+  .ex_wren_o          (mem_wren_i         ),
+  .ex_waddr_o         (mem_waddr_i        ),
+  .ex_wdata_o         (mem_wdata_i        ),
+  .ex_nofwd_o         (mem_nofwd_i        ),
+    
+  .ex_aluop_o         (alu_op             ),
+  .ex_memop_o         (mem_memop_i        ),
+  .ex_opr1_o          (opr1               ),
+  .ex_opr2_o          (opr2               ),
+
+  .ex_menen_o         (data_sram_en       ),   
+  .ex_memwen_o        (data_sram_wen      ),   
+  .ex_memaddr_o       (data_sram_addr     ), 
+  .ex_memwdata_o      (data_sram_wdata    ), 
+
+  .ex_inst_o          (mem_inst_i         ),
+  .ex_inslot_o        (mem_inslot_i       ),
+  .ex_stallreq_o      (                   ),
+  .ex_pc_o            (mem_pc_i           ),
+
+  .ex_wdata_bp_o      (ex_wdata_bp        )
+);
+
+alu ALU
+(
+  .opr1               (opr1               ),
+  .opr2               (opr2               ),
+  .alu_op             (alu_op             ),
+  .alu_res            (ex_alures_i        )
+);
+
+mem MEM
+(
   .clk                (clk),
   .rst_n              (resetn),
-  .ex_flush_i         (0),    
-  .ex_stall_i         (0),
 
-  .ex_inst_i          (ex_inst_i),
-  .ex_inslot_i        (ex_inslot_i),
-  .ex_pc_i            (ex_pc_i),
-  .ex_opr1_i          (ex_opr1_i),
-  .ex_opr2_i          (ex_opr2_i),
-  .ex_wren_i          (ex_wren_i),
-  .ex_waddr_i         (ex_waddr_i),
-  .ex_offset_i        (ex_offset_i),
-  .ex_nofwd_i         (ex_nofwd_i),
+  .mem_memdata_i      (data_sram_rdata),  
 
-  .ex_aluop_i         (ex_aluop_i),
-  .ex_mduop_i         (ex_mduop_i),
-  .ex_memop_i         (ex_memop_i),
-  .ex_tlbop_i         (ex_tlbop_i),
-  .ex_cacheop_i       (ex_cacheop_i),
+  .mem_inst_i         (mem_inst_i),
+  .mem_pc_i           (mem_pc_i),
+  .mem_inslot_i       (mem_inslot_i),
+  .mem_memop_i        (mem_memop_i),
 
-  .ex_alures_i        (ex_alures_i),
+  .mem_waddr_i        (mem_waddr_i),
+  .mem_wdata_i        (mem_wdata_i),
+  .mem_wren_i         (mem_wren_i),
+  .mem_nofwd_i        (mem_nofwd_i),
 
-  .ex_c0wen_i         (ex_c0wen_i),
-  .ex_c0ren_i         (ex_c0ren_i),
-  .ex_c0addr_i        (ex_c0addr_i),
+  .mem_stall_i        (0),
+  .mem_flush_i        (0),  
 
-    
-  .ex_wren_o          (mem_wren_i),
-  .ex_waddr_o         (mem_waddr_i),
-  .ex_wdata_o         (mem_wdata_i),
-  .ex_nofwd_o         (mem_nofwd_i),
-    
-  .ex_aluop_o         (alu_op),
-  .ex_memop_o         (mem_memop_i),
-  .ex_opr1_o          (opr1),
-  .ex_opr2_o          (opr2),
+  .mem_inst_o         (wb_inst_i),
+  .mem_inslot_o       (),
 
-  .ex_menen_o         (data_sram_en),   
-  .ex_memwen_o        (data_sram_wen),   
-  .ex_memaddr_o       (data_sram_addr), 
-  .ex_memwdata_o      (data_sram_wdata), 
+  .mem_waddr_o        (wb_waddr_i),
+  .mem_wdata_o        (wb_wdata_i),
+  .mem_wren_o         (wb_wren_i),
+  .mem_pc_o           (wb_pc_i),
 
-  .ex_inst_o          (mem_inst_i),
-  .ex_inslot_o        (mem_inslot_i),
-  .ex_stallreq_o      (),
-
-  .ex_wdata_bp_o      (ex_wdata_bp)
+  .mem_stall_o        ()
 
 );
 
+
+writeback WRITEBACK
+(
+  .clk                (clk),
+  .rst_n              (resetn),
+  .wb_stall_i         (0),
+  .wb_flush_i         (0),
+
+  .wb_memop_i         (wb_memop_i),
+  .wb_wren_i          (wb_wren_i),
+  .wb_waddr_i         (wb_waddr_i),
+  .wb_wdata_i         (wb_wdata_i),
+  .wb_inst_i          (wb_inst_i),
+
+  .wb_pc_i            (wb_pc_i),
+
+  .wb_mem_addr_i      (wb_mem_addr_i),
+  .wb_mem_data_i      (wb_mem_data_i),
+
+  .wb_wren_o          (rf_wren),
+  .wb_waddr_o         (rf_waddr),
+  .wb_wdata_o         (rf_wdata),
+
+
+  .debug_wb_pc        (debug_wb_pc),
+  .debug_wb_rf_wen    (debug_wb_rf_wen),
+  .debug_wb_rf_wnum   (debug_wb_rf_wnum),
+  .debug_wb_rf_wdata  (debug_wb_rf_wdata)
+);
 endmodule

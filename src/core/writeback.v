@@ -3,14 +3,15 @@
 module writeback
 (
 	input wire 				clk,
-	input wire 				rst,
+	input wire 				rst_n,
 	input wire				wb_stall_i,
 	input wire 				wb_flush_i,
 
 	input wire [`MMOP]		wb_memop_i,
-	input wire 				wb_wen_i,
+	input wire 				wb_wren_i,
 	input wire [31: 0]		wb_waddr_i,
 	input wire [31: 0]		wb_wdata_i,
+	input wire [31: 0]		wb_inst_i,
 
 	input wire [31: 0]		wb_pc_i,
 
@@ -20,7 +21,7 @@ module writeback
 
 
 	//to regfile
-	output wire 			wb_wen_o,
+	output wire 			wb_wren_o,
 	output wire [31: 0]		wb_waddr_o,
 	output wire [31: 0]		wb_wdata_o,
 
@@ -35,11 +36,16 @@ module writeback
 
 	assign wb_wdata_final		= wb_wdata_i;
 
-	assign debug_wb_rf_wen 		= {4{wb_wen_i}};
+	assign debug_wb_rf_wen 		= {4{wb_wren_i}};
 	assign debug_wb_rf_wnum		= wb_waddr_i;
 	assign debug_wb_rf_wdata	= wb_wdata_final;
 
 	assign debug_wb_pc			= wb_pc_i;
 
+
+	//for debug
+	wire [31: 0]  wb_pc_next ;
+	assign wb_pc_next 			= wb_pc_i;
+	assign wb_inst_next 		= wb_inst_i;
 
 endmodule

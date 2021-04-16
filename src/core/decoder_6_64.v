@@ -1,4 +1,4 @@
-module decoder_5_32
+module decoder_6_64
 (
 	input 	[ 5:0] in,
 	output	[63:0] out

@@ -1,5 +1,5 @@
 // Bus Width
-`define         AOP_W                   6
+`define         AOP_W                   12
 `define         MDOP_W                  3
 `define         MMOP_W                  4
 `define         AOP                     `AOP_W-1: 0
@@ -147,38 +147,6 @@
 
 /*--------------------Decoded Opcode--------------------*/
 // ALU Op
-`define         ALU_NOP             `AOP_W'h00
-`define         ALU_AND             `AOP_W'h01
-`define         ALU_OR              `AOP_W'h02
-`define         ALU_XOR             `AOP_W'h03
-`define         ALU_NOR             `AOP_W'h04
-`define         ALU_SLL             `AOP_W'h05
-`define         ALU_SRL             `AOP_W'h06
-`define         ALU_SRA             `AOP_W'h07
-`define         ALU_SLT             `AOP_W'h08
-`define         ALU_SLTU            `AOP_W'h09
-`define         ALU_ADD             `AOP_W'h0A
-`define         ALU_ADDU            `AOP_W'h0B
-`define         ALU_SUB             `AOP_W'h0C
-`define         ALU_SUBU            `AOP_W'h0D
-`define         ALU_CLZ             `AOP_W'h0E
-`define         ALU_CLO             `AOP_W'h0F
-`define         ALU_MOVZ            `AOP_W'h10
-`define         ALU_MOVN            `AOP_W'h11
-`define         ALU_LUI             `AOP_W'h12
-`define         ALU_MFHI            `AOP_W'h13
-`define         ALU_MFLO            `AOP_W'h14
-`define         ALU_MUL             `AOP_W'h15
-
-`define         ALU_TGE             `AOP_W'h16
-`define         ALU_TGEU            `AOP_W'h17
-`define         ALU_TLT             `AOP_W'h18
-`define         ALU_TLTU            `AOP_W'h19
-`define         ALU_TEQ             `AOP_W'h1A
-`define         ALU_TNE             `AOP_W'h1B
-
-`define         ALU_SC              `AOP_W'h1C
-`define         ALU_OPR2            `AOP_W'h1D
 
 // MDU Op
 `define         MDU_MTHI            `MDOP_W'h0
