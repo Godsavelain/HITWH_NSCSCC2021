@@ -54,7 +54,7 @@ module execute
  	output wire [31: 0]		ex_pc_o,
 
  	//bypass 
- 	output wire				ex_wdata_bp_o
+ 	output wire	[31: 0]		ex_wdata_bp_o
 
 );
 	

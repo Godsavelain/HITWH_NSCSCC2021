@@ -93,7 +93,8 @@ module decoder
 	wire        src1_is_sa;
 	wire        src1_is_pc;
 	wire        src2_is_8;
-	wire 		src2_is_imm;
+	wire 		src2_is_imm_s;//有符号扩展
+	wire 		src2_is_imm_u;//无符号扩展
 	wire		src2_is_joffset;
 
 	wire [ 5: 0] opcode;
@@ -336,9 +337,9 @@ module decoder
 
 	assign src1_is_sa   	= inst_sll   | inst_srl | inst_sra;
 	assign src1_is_pc   	= inst_jal;
-	assign src2_is_imm  	= inst_addi  | inst_addiu | inst_slti  | inst_sltiu | inst_andi | inst_lui 
-							| inst_ori 	 | inst_xori  |inst_lb     | inst_lbu   | inst_lh   | inst_lhu 
-							| inst_lw    | inst_sw    | inst_sh    | inst_sb; 
+	assign src2_is_imm_s  	= inst_addi  | inst_addiu | inst_slti  | inst_sltiu | inst_lb  | inst_lbu  
+							| inst_lh   | inst_lhu | inst_lw    | inst_sw    | inst_sh    | inst_sb; 
+	assign src2_is_imm_u	= inst_andi | inst_lui | inst_ori 	| inst_xori  ;
 	assign src2_is_8    	= inst_jal;
 
 
@@ -347,7 +348,8 @@ module decoder
 						  	  src1_is_pc 	  ? id_pc_next  :
 						  	  id_reg1data_i;
 
-	assign id_opr2_next 	= src2_is_imm 	  ? sign_ext   :
+	assign id_opr2_next 	= src2_is_imm_s	  ? sign_ext   :
+							  src2_is_imm_u	  ? zero_ext   :
 						      src2_is_8   	  ? 32'd8  	   :
 						      id_reg2data_i;
 

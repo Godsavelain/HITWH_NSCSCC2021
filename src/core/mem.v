@@ -43,7 +43,7 @@ module mem
 	wire 			mem_wren_next;
 	wire 			mem_nofwd_next;
 	wire 			mem_memop_next;
-	wire 			mem_pc_next;
+	wire [31: 0]	mem_pc_next;
 
 	assign  mem_inst_next  		= mem_inst_i;
 	assign  mem_inslot_next		= mem_inslot_i;
