@@ -41,6 +41,7 @@ module decoder
 
  	output wire 			id_wren_o,
  	output wire [ 4: 0]		id_waddr_o,
+ 	output wire [31: 0]		id_rtvalue_o,
 
  	output wire [`AOP] 		id_aluop_o,
  	output wire [`MDOP] 	id_mduop_o,
@@ -70,6 +71,7 @@ module decoder
  	wire [31: 0]		id_pc_next;	
  	wire 				id_wren_next;
  	wire [ 4: 0]		id_waddr_next;
+ 	wire [31: 0]  		id_rtvalue_next;
  	wire [`AOP] 		id_aluop_next;
  	wire [`MDOP] 		id_mduop_next;
  	wire [`MMOP] 		id_memop_next;
@@ -88,7 +90,8 @@ module decoder
 	wire [31: 0] rt_d;
 	wire [31: 0] rd_d;
 
-	wire [11: 0] alu_op;
+	wire [`AOP] alu_op;
+	wire [`MMOP] mem_op;
 
 	wire        src1_is_sa;
 	wire        src1_is_pc;
@@ -226,7 +229,7 @@ module decoder
 
 
     decoder_6_64 u_dec0(.in(opcode), .out(op_d	 ));
-    decoder_6_64 u_dec1(.in(funct) , .out(func_d));
+    decoder_6_64 u_dec1(.in(funct) , .out(func_d ));
     decoder_5_32 u_dec5(.in(sa)	   , .out(sa_d	 ));
 
 	decoder_5_32 u_dec2(.in(rs  ), .out(rs_d  ));
@@ -271,13 +274,13 @@ module decoder
 	assign inst_mtlo   = 0;
 	
 	
-	assign inst_lb     = 0;
-	assign inst_lbu    = 0;
-	assign inst_lh     = 0;
-	assign inst_lhu     = 0;
+	assign inst_lb     = op_d[`OP_LB];
+	assign inst_lbu    = op_d[`OP_LBU];
+	assign inst_lh     = op_d[`OP_LH];
+	assign inst_lhu    = op_d[`OP_LHU];
 	assign inst_lw     = op_d[`OP_LW];
-	assign inst_sb     = 0;
-	assign inst_sh     = 0;
+	assign inst_sb     = op_d[`OP_SB];
+	assign inst_sh     = op_d[`OP_SH];
 	assign inst_sw     = op_d[`OP_SW];
 
 	//branch
@@ -301,7 +304,9 @@ module decoder
 	assign inst_break  = 0;
 	assign inst_syscall= 0;
 
-	assign alu_op[ 0] = inst_addu | inst_addiu | inst_lw | inst_sw | inst_jal;
+	assign alu_op[ 0] = inst_addu | inst_addiu | inst_lw | inst_lhu | inst_lh 
+								  | inst_lbu   | inst_lb | inst_sw  | inst_sh
+								  | inst_sb    | inst_jal;
 	assign alu_op[ 1] = inst_subu;
 	assign alu_op[ 2] = inst_slt;
 	assign alu_op[ 3] = inst_sltu;
@@ -313,6 +318,15 @@ module decoder
 	assign alu_op[ 9] = inst_srl;
 	assign alu_op[10] = inst_sra;
 	assign alu_op[11] = inst_lui;
+
+	assign mem_op[0]  = inst_lb;
+	assign mem_op[1]  = inst_lbu;
+	assign mem_op[2]  = inst_lh;
+	assign mem_op[3]  = inst_lhu;
+	assign mem_op[4]  = inst_lw;
+	assign mem_op[5]  = inst_sb;
+	assign mem_op[6]  = inst_sh;
+	assign mem_op[7]  = inst_sw;
 
 //transfer info to EX stage
 	assign id_pc_next 		= id_pc_i;
@@ -333,13 +347,16 @@ module decoder
  							  ~inst_bgtz & ~inst_blez & ~inst_bltz & ~inst_j &
  							  ~inst_mthi & ~inst_mtlo & ~inst_break & ~inst_syscall &
  							  ~inst_sw   & ~inst_sh   & ~inst_sb & ~inst_eret & ~inst_mtc0;
+ 	assign id_rtvalue_next  = id_reg2data_i;						  
+
  	assign id_aluop_next	= alu_op;
+ 	assign id_memop_next	= mem_op;
 
 	assign src1_is_sa   	= inst_sll   | inst_srl | inst_sra;
 	assign src1_is_pc   	= inst_jal;
 	assign src2_is_imm_s  	= inst_addi  | inst_addiu | inst_slti  | inst_sltiu | inst_lb  | inst_lbu  
-							| inst_lh   | inst_lhu | inst_lw    | inst_sw    | inst_sh    | inst_sb; 
-	assign src2_is_imm_u	= inst_andi | inst_lui | inst_ori 	| inst_xori  ;
+							| inst_lh    | inst_lhu   | inst_lw    | inst_sw    | inst_sh  | inst_sb; 
+	assign src2_is_imm_u	= inst_andi  | inst_lui   | inst_ori   | inst_xori  ;
 	assign src2_is_8    	= inst_jal;
 
 
@@ -378,6 +395,8 @@ DFFRE #(.WIDTH(32))			pc_next				(.d(id_pc_next), .q(id_pc_o), .en(en), .clk(clk
 DFFRE #(.WIDTH(1))			wren_next			(.d(id_wren_next), .q(id_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(5))			waddr_next			(.d(id_waddr_next), .q(id_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			inslot_next			(.d(id_inslot_next), .q(id_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(32))			rtvalue_next		(.d(id_rtvalue_next), .q(id_rtvalue_o), .en(en), .clk(clk), .rst_n(rst_n));
+
 
 DFFRE #(.WIDTH(32))			inst_next			(.d(id_inst_next), .q(id_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
 

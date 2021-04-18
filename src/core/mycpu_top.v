@@ -51,6 +51,7 @@ wire [31: 0] ex_opr1_i;
 wire [31: 0] ex_opr2_i;
 wire         ex_wren_i;
 wire [ 4: 0] ex_waddr_i;
+wire [31: 0] ex_rtvalue_i;
 wire [31: 0] ex_offset_i;
 wire         ex_nofwd_i;
 
@@ -71,8 +72,9 @@ wire [31: 0] opr2;
 wire [`AOP]  alu_op;
 
 //mem stage signals
+wire [ 1: 0] mem_memaddr_low_i;
 wire         mem_nofwd_i;
-
+wire         mem_inst_load_i;
 wire [31: 0] mem_inst_i;
 wire [31: 0] mem_pc_i;
 wire         mem_inslot_i;
@@ -107,6 +109,7 @@ wire         rf_ex_nofwd;
 wire         rf_mem_nofwd;
 
 wire [31: 0] ex_wdata_bp;
+wire [31: 0] mem_wdata_bp;
 
 // module declaration
 pc PC
@@ -169,6 +172,7 @@ decoder DECODER
 
   .id_wren_o          (ex_wren_i          ),
   .id_waddr_o         (ex_waddr_i         ),
+  .id_rtvalue_o       (ex_rtvalue_i       ),
 
   .id_aluop_o         (ex_aluop_i         ),
   .id_mduop_o         (ex_mduop_i         ),
@@ -203,7 +207,7 @@ regfile REGFILE
   .ex_wdata           (ex_wdata_bp        ),
   .mem_wen            (mem_wren_i         ),
   .mem_waddr          (mem_waddr_i        ),
-  .mem_wdata          (mem_wdata_i        ),
+  .mem_wdata          (mem_wdata_bp       ),
 
 
   .ex_nofwd           (rf_ex_nofwd        ),
@@ -227,6 +231,7 @@ execute EXECUTE
   .ex_waddr_i         (ex_waddr_i         ),
   .ex_offset_i        (ex_offset_i        ),
   .ex_nofwd_i         (ex_nofwd_i         ),
+  .ex_rtvalue_i       (ex_rtvalue_i       ),
 
   .ex_aluop_i         (ex_aluop_i         ),
   .ex_mduop_i         (ex_mduop_i         ),
@@ -260,6 +265,8 @@ execute EXECUTE
   .ex_inslot_o        (mem_inslot_i       ),
   .ex_stallreq_o      (                   ),
   .ex_pc_o            (mem_pc_i           ),
+  .ex_inst_load_o     (mem_inst_load_i    ),
+  .ex_memaddr_low_o   (mem_memaddr_low_i  ),
 
   .ex_wdata_bp_o      (ex_wdata_bp        )
 );
@@ -283,11 +290,13 @@ mem MEM
   .mem_pc_i           (mem_pc_i),
   .mem_inslot_i       (mem_inslot_i),
   .mem_memop_i        (mem_memop_i),
+  .mem_memaddr_low_i  (mem_memaddr_low_i),
 
   .mem_waddr_i        (mem_waddr_i),
   .mem_wdata_i        (mem_wdata_i),
   .mem_wren_i         (mem_wren_i),
   .mem_nofwd_i        (mem_nofwd_i),
+  .mem_inst_load_i    (mem_inst_load_i),
 
   .mem_stall_i        (0),
   .mem_flush_i        (0),  
@@ -300,6 +309,7 @@ mem MEM
   .mem_wren_o         (wb_wren_i),
   .mem_pc_o           (wb_pc_i),
 
+  .mem_wdata_bp       (mem_wdata_bp),
   .mem_stall_o        ()
 
 );

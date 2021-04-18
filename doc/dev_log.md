@@ -1,5 +1,11 @@
 ### TO DO LIST:添加指令完成sram功能测试
 
+###### 2021.4.18
+
+* 添加了访存指令lw lh lhu lb lbu sw sh sb，未测试
+* 修改了mem至decoder的旁路逻辑bug，现在mem送入的数据会考虑是否是访存信号
+* 为execute至mem段新增了inst_load信号，表明当前指令为load指令
+
 ###### 2021.4.17
 
 * 修复bug，完成了ori指令并测试通过。

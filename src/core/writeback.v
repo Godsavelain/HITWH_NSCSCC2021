@@ -35,6 +35,10 @@ module writeback
 	wire   [31: 0]			wb_wdata_final;
 
 	assign wb_wdata_final		= wb_wdata_i;
+//to regfile
+	assign wb_wren_o			= wb_wren_i;
+	assign wb_waddr_o			= wb_waddr_i;
+	assign wb_wdata_o  			= wb_wdata_final;
 
 	assign debug_wb_rf_wen 		= {4{wb_wren_i}};
 	assign debug_wb_rf_wnum		= wb_waddr_i;
