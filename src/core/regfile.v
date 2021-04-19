@@ -12,14 +12,14 @@ module regfile
 	output 	wire [31: 0]	rdata2,
 	//for write
 	input 	wire			we,
-	input 	wire			waddr,
+	input 	wire [ 4: 0]	waddr,
 	input	wire [31: 0]	wdata,
 	//for bypass
 	input 	wire 			ex_wen,
-	input	wire [31: 0]	ex_waddr,
+	input	wire [ 4: 0]	ex_waddr,
 	input 	wire [31: 0]	ex_wdata,
 	input 	wire 			mem_wen,
-	input	wire [31: 0]	mem_waddr,
+	input	wire [ 4: 0]	mem_waddr,
 	input 	wire [31: 0]	mem_wdata,
 
 	//指令相关等需要暂停两周期

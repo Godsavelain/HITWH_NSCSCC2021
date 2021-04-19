@@ -1,5 +1,10 @@
 ### TO DO LIST:添加指令完成sram功能测试
 
+###### 2021.4.19
+
+* 添加了beq bne bgez bgtz blez bltz bgezal bltzal j jal jr jalr指令内容。未测试。
+* 根据自己动手写CPU的测试用例，利用ori指令测试了数据旁路，可以工作
+
 ###### 2021.4.18
 
 * 添加了访存指令lw lh lhu lb lbu sw sh sb，未测试

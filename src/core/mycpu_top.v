@@ -87,7 +87,7 @@ wire         mem_wren_i;
 //writeback stage signals
 wire [`MMOP] wb_memop_i;
 wire         wb_wen_i;
-wire [31: 0] wb_waddr_i;
+wire [ 4: 0] wb_waddr_i;
 wire [31: 0] wb_wdata_i;
 
 wire [31: 0] wb_pc_i;
@@ -102,8 +102,8 @@ wire [ 4: 0] rf_raddr1_i;
 wire [ 4: 0] rf_raddr2_i;
 
 wire         rf_wren;
-wire         rf_waddr;
-wire         rf_wdata;
+wire [ 4: 0] rf_waddr;
+wire [31: 0] rf_wdata;
 
 wire         rf_ex_nofwd;
 wire         rf_mem_nofwd;

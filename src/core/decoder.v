@@ -90,7 +90,7 @@ module decoder
 	wire [31: 0] rt_d;
 	wire [31: 0] rd_d;
 
-	wire [`AOP] alu_op;
+	wire [`AOP]  alu_op;
 	wire [`MMOP] mem_op;
 
 	wire        src1_is_sa;
@@ -116,8 +116,6 @@ module decoder
     wire [31: 0] sign_ext;
     wire [31: 0] lui_ext;	//load upper imm
     wire [31: 0] sa_ext;	//used for shift
-    wire [31: 0] j_target;	//j and jal
-    wire [31: 0] b_target;	//branch target
     wire		 waddr_is_31;// write GPR addr is 31
     wire		 waddr_is_rt;// write GPR addr is rt
     wire 		 mul_div;
@@ -137,9 +135,6 @@ module decoder
     assign sign_ext  	= {{16{imme[15]}}, imme};
     assign lui_ext	 	= {imme, 16'h0};
     assign sa_ext	 	= {27'h0, sa};
-
-    assign j_target  	= {pcp4[31:28], j_offset, 2'b00};
-    assign b_target  	= pcp4 + {sign_ext[29: 0], 2'b00};
 
     assign waddr_is_31	= inst_bgezal | inst_bltzal | inst_jal  | inst_jalr;
     assign waddr_is_rt	= inst_addi   | inst_addiu  | inst_slti | inst_sltiu 
@@ -286,16 +281,16 @@ module decoder
 	//branch
 	assign inst_beq    = op_d[`OP_BEQ];
 	assign inst_bne    = op_d[`OP_BNE];
-	assign inst_bgez   = 0;
-	assign inst_bgtz   = 0;
-	assign inst_blez   = 0;
-	assign inst_bltz   = 0;
-	assign inst_bgezal = 0;
-	assign inst_bltzal = 0;
-	assign inst_j 	   = 0;
+	assign inst_bgez   = op_d[`OP_REGIMM] & rt_d[5'h01];
+	assign inst_bgtz   = op_d[`OP_BGTZ]   & rt_d[5'h00];
+	assign inst_blez   = op_d[`OP_BLEZ]   & rt_d[5'h00];
+	assign inst_bltz   = op_d[`OP_REGIMM] & rt_d[5'h00];
+	assign inst_bgezal = op_d[`OP_REGIMM] & rt_d[5'h11];
+	assign inst_bltzal = op_d[`OP_REGIMM] & rt_d[5'h10];
+	assign inst_j 	   = op_d[`OP_J];
 	assign inst_jal    = op_d[`OP_JAL];
 	assign inst_jr     = op_d[`OP_SPECIAL] & func_d[6'h08] & rt_d[5'h00] & rd_d[5'h00] & sa_d[5'h00];
-	assign inst_jalr   = 0;
+	assign inst_jalr   = op_d[`OP_SPECIAL] & func_d[6'h09] & rt_d[5'h00] & sa_d[5'h00];
 
 	assign inst_eret   = 0;
 	assign inst_mfc0   = 0;
@@ -306,7 +301,8 @@ module decoder
 
 	assign alu_op[ 0] = inst_addu | inst_addiu | inst_lw | inst_lhu | inst_lh 
 								  | inst_lbu   | inst_lb | inst_sw  | inst_sh
-								  | inst_sb    | inst_jal;
+								  | inst_sb    | inst_jal| inst_jalr| inst_bgezal
+								  | inst_bltzal;
 	assign alu_op[ 1] = inst_subu;
 	assign alu_op[ 2] = inst_slt;
 	assign alu_op[ 3] = inst_sltu;
@@ -353,11 +349,11 @@ module decoder
  	assign id_memop_next	= mem_op;
 
 	assign src1_is_sa   	= inst_sll   | inst_srl | inst_sra;
-	assign src1_is_pc   	= inst_jal;
+	assign src1_is_pc   	= inst_jal 	 | inst_jalr  | inst_bgezal| inst_bltzal;
 	assign src2_is_imm_s  	= inst_addi  | inst_addiu | inst_slti  | inst_sltiu | inst_lb  | inst_lbu  
 							| inst_lh    | inst_lhu   | inst_lw    | inst_sw    | inst_sh  | inst_sb; 
 	assign src2_is_imm_u	= inst_andi  | inst_lui   | inst_ori   | inst_xori  ;
-	assign src2_is_8    	= inst_jal;
+	assign src2_is_8    	= inst_jal 	 | inst_jalr  | inst_bgezal| inst_bltzal;
 
 
 	//to next stage
@@ -371,7 +367,7 @@ module decoder
 						      id_reg2data_i;
 
 	assign id_waddr_next 	= waddr_is_31 	  	  ? 5'd31 	   :
-						      waddr_is_rt	  ? rt 		   :
+						      waddr_is_rt	  	  ? rt 		   :
 						      rd;
 
 	assign id_offset_next	= sign_ext;
@@ -379,7 +375,41 @@ module decoder
 	assign id_inslot_next   = id_inslot_i;
 	assign id_inst_next 	= id_inst_i;
 	//for branch outputs
+	wire [31: 0] j_target;	//j and jal
+    wire [31: 0] b_target;	//branch target
+    assign j_target  		= {pcp4[31:28], j_offset, 2'b00};
+    assign b_target  		= pcp4 + {sign_ext[29: 0], 2'b00};
 
+    wire inst_branch_b;		//转移地址为b_target
+    wire inst_branch_j;		//转移地址为j_target
+    wire inst_branch_rs;	//转移地址为rs
+    assign inst_branch_b	= inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
+    						| inst_bgezal | inst_bltzal ;
+    assign inst_branch_j	= inst_j   | inst_jal;
+    assign inst_branch_rs	= inst_jr  | inst_jalr;
+
+    assign id_branch_pc_o   = inst_branch_b ? b_target :
+    						  inst_branch_j ? j_target :
+    						  id_reg1data_i;
+ 	wire LZ;     // Less Than Zero
+    wire GEZ;    // Greater Than or Equal to Zero
+    wire LEZ;    // Less Than or Equal to Zero
+    wire GZ;     // Greater Than Zero
+    wire EQ;     // Equal
+    wire NEQ;    // Not Equal
+
+    assign LZ     = id_reg1data_i[31];               
+    assign GEZ    = ~LZ;                      
+    assign LEZ    = (LZ || (id_reg1data_i == 0));    
+    assign GZ     = ~LEZ;                    
+    assign EQ     = (id_reg1data_i ^ id_reg2data_i) == 0;   
+    assign NEQ    = ~EQ;                     
+
+    assign id_branch_en_o	= (inst_beq & EQ) | (inst_bne & NEQ) | (inst_bgez & GEZ) | (inst_bgtz & GZ) 
+    						| (inst_blez & LEZ) | (inst_bltz & LZ) | (inst_bgezal & GEZ) | (inst_bltzal & LZ)
+    						| inst_j | inst_jal | inst_jr | inst_jalr;
+    assign id_next_inslot_o = inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
+    						| inst_bgezal | inst_bltzal | inst_j   | inst_jal | inst_jr  | inst_jalr;
 
 	assign en 				= ~ id_stall_i;
 
@@ -410,10 +440,6 @@ DFFRE #(.WIDTH(1))			c0wen_next			(.d(id_c0wen_next), .q(id_c0wen_o), .en(en), .
 DFFRE #(.WIDTH(1))			c0ren_next			(.d(id_c0ren_next), .q(id_c0ren_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 //尚未实现
-assign 				id_branch_en_o = 0;
-assign				id_branch_pc_o = 0;
-assign				id_next_inslot_o = 0;
-
 assign 				id_nofwd_o = 0;
 
 assign 				id_mduop_o = 0;
