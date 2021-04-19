@@ -234,34 +234,34 @@ module decoder
 
 
 //decode
-	assign inst_add    = 0;
-	assign inst_addi   = 0;
+	assign inst_add    = op_d[`OP_SPECIAL] & func_d[6'h20] & sa_d[5'h00];
+	assign inst_addi   = op_d[`OP_ADDI];
 	assign inst_addiu  = op_d[`OP_ADDIU]; 
     assign inst_addu   = op_d[`OP_SPECIAL] & func_d[6'h21] & sa_d[5'h00];
-    assign inst_sub    = 0;
+    assign inst_sub    = op_d[`OP_SPECIAL] & func_d[6'h22] & sa_d[5'h00];
 	assign inst_subu   = op_d[`OP_SPECIAL] & func_d[6'h23] & sa_d[5'h00];
 	assign inst_slt    = op_d[`OP_SPECIAL] & func_d[6'h2a] & sa_d[5'h00];
-	assign inst_slti   = 0;
+	assign inst_slti   = op_d[`OP_SLTI];
 	assign inst_sltu   = op_d[`OP_SPECIAL] & func_d[6'h2b] & sa_d[5'h00];
-	assign inst_sltiu  = 0;
-	assign inst_div    = 0;
-	assign inst_divu   = 0;
-	assign inst_mult   = 0;
-	assign inst_multu  = 0;
+	assign inst_sltiu  = op_d[`OP_SLTIU];
+	assign inst_div    = op_d[`OP_SPECIAL] & func_d[6'h1a] & sa_d[5'h00] & rd_d[5'h00];
+	assign inst_divu   = op_d[`OP_SPECIAL] & func_d[6'h1b] & sa_d[5'h00] & rd_d[5'h00];
+	assign inst_mult   = op_d[`OP_SPECIAL] & func_d[6'h18] & sa_d[5'h00] & rd_d[5'h00];
+	assign inst_multu  = op_d[`OP_SPECIAL] & func_d[6'h19] & sa_d[5'h00] & rd_d[5'h00];
 	assign inst_and    = op_d[`OP_SPECIAL] & func_d[6'h24] & sa_d[5'h00];
-	assign inst_andi   = 0;
+	assign inst_andi   = op_d[`OP_ANDI];
 	assign inst_lui    = op_d[`OP_LUI] & rs_d[5'h00];
 	assign inst_or     = op_d[`OP_SPECIAL] & func_d[6'h25] & sa_d[5'h00];
 	assign inst_ori    = op_d[`OP_ORI];
 	assign inst_xor    = op_d[`OP_SPECIAL] & func_d[6'h26] & sa_d[5'h00];
-	assign inst_xori   = 0;
+	assign inst_xori   = op_d[`OP_XORI];
 	assign inst_nor    = op_d[`OP_SPECIAL] & func_d[6'h27] & sa_d[5'h00];
 	assign inst_sll    = op_d[`OP_SPECIAL] & func_d[6'h00] & rs_d[5'h00];
-	assign inst_sllv   = 0;
+	assign inst_sllv   = op_d[`OP_SPECIAL] & func_d[6'h04] & sa_d[5'h00];
 	assign inst_srl    = op_d[`OP_SPECIAL] & func_d[6'h02] & rs_d[5'h00];
-	assign inst_srlv   = 0;
+	assign inst_srlv   = op_d[`OP_SPECIAL] & func_d[6'h06] & sa_d[5'h00];
 	assign inst_sra    = op_d[`OP_SPECIAL] & func_d[6'h03] & rs_d[5'h00];
-	assign inst_srav   = 0;
+	assign inst_srav   = op_d[`OP_SPECIAL] & func_d[6'h07] & sa_d[5'h00];
 
 	assign inst_mfhi   = 0;
 	assign inst_mflo   = 0;
@@ -300,19 +300,19 @@ module decoder
 	assign inst_syscall= 0;
 
 	assign alu_op[ 0] = inst_addu | inst_addiu | inst_lw | inst_lhu | inst_lh 
-								  | inst_lbu   | inst_lb | inst_sw  | inst_sh
-								  | inst_sb    | inst_jal| inst_jalr| inst_bgezal
+					  | inst_add  | inst_lbu   | inst_lb | inst_sw  | inst_sh
+					  | inst_addi | inst_sb    | inst_jal| inst_jalr| inst_bgezal
 								  | inst_bltzal;
-	assign alu_op[ 1] = inst_subu;
-	assign alu_op[ 2] = inst_slt;
-	assign alu_op[ 3] = inst_sltu;
-	assign alu_op[ 4] = inst_and;
+	assign alu_op[ 1] = inst_subu | inst_sub;
+	assign alu_op[ 2] = inst_slt  | inst_slti;
+	assign alu_op[ 3] = inst_sltu | inst_sltiu;
+	assign alu_op[ 4] = inst_and  | inst_andi;
 	assign alu_op[ 5] = inst_nor;
 	assign alu_op[ 6] = inst_or   | inst_ori;
 	assign alu_op[ 7] = inst_xor  | inst_xori;
-	assign alu_op[ 8] = inst_sll;
-	assign alu_op[ 9] = inst_srl;
-	assign alu_op[10] = inst_sra;
+	assign alu_op[ 8] = inst_sll  | inst_sllv;
+	assign alu_op[ 9] = inst_srl  | inst_srlv;
+	assign alu_op[10] = inst_sra  | inst_srav;
 	assign alu_op[11] = inst_lui;
 
 	assign mem_op[0]  = inst_lb;

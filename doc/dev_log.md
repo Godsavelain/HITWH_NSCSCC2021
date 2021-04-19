@@ -2,8 +2,9 @@
 
 ###### 2021.4.19
 
+* 添加了add addi and or nor xor xori andi ori sub slt slti sltu 等指令，测试了一部分
 * 添加了beq bne bgez bgtz blez bltz bgezal bltzal j jal jr jalr指令内容。未测试。
-* 根据自己动手写CPU的测试用例，利用ori指令测试了数据旁路，可以工作
+* 根据自己动手写CPU的测试用例，利用ori指令测试了数据旁路，可以工作。
 
 ###### 2021.4.18
 

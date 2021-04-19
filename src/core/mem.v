@@ -71,6 +71,8 @@ module mem
 								| ({32{mem_memop_i[3]}} & lhu_res)
 								| ({32{mem_memop_i[4]}} & lw_res );
 
+	assign 			mem_wdata_bp= mem_wdata_i;
+
 
 	wire [31: 0] 	mem_inst_next;
 	wire 			mem_inslot_next;
