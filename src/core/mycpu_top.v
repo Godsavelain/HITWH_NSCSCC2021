@@ -111,13 +111,34 @@ wire         rf_mem_nofwd;
 wire [31: 0] ex_wdata_bp;
 wire [31: 0] mem_wdata_bp;
 
+//to control
+wire        streq_pc_i; 
+wire        streq_id_i;
+wire        streq_ex_i;
+wire        streq_mem_i;
+wire        streq_wb_i;
+wire        exc_flag;
+
+wire        stall_pc_o;
+wire        stall_id_o;
+wire        stall_ex_o;
+wire        stall_mem_o;
+wire        stall_wb_o;
+
+wire        flush_pc_o;
+wire        flush_id_o;
+wire        flush_ex_o;
+wire        flush_mem_o;
+wire        flush_wb_o;
+
 // module declaration
 pc PC
 (
   .clk                (clk                ),
   .rst_n              (resetn             ),
-  .if_flush_i         (0                  ),     
-  .if_stall_i         (0                  ),     
+  .pc_flush_i         (flush_pc_o         ),
+  .if_flush_i         (flush_id_o         ),     
+  .if_stall_i         (stall_pc_o         ),     
   .branch_en          (if_branch_en       ),
 
   .flush_pc_i         (0                  ),
@@ -139,8 +160,9 @@ decoder DECODER
 (
   .clk                (clk                ),
   .rst_n              (resetn             ),
-  .id_flush_i         (0                  ),
-  .id_stall_i         (0                  ), 
+  .if_flush_i         (flush_id_o         ),
+  .id_flush_i         (flush_ex_o         ),
+  .id_stall_i         (stall_id_o         ), 
 
   .id_pc_i            (id_pc_i            ),
   .id_inst_i          (id_inst_i          ),
@@ -212,15 +234,15 @@ regfile REGFILE
 
   .ex_nofwd           (rf_ex_nofwd        ),
   .mem_nofwd          (rf_mem_nofwd       ),
-  .stallreq           (                   )
+  .stallreq           (streq_id_i         )
 );
 
 execute EXECUTE
 (
   .clk                (clk                ),
   .rst_n              (resetn             ),
-  .ex_flush_i         (0                  ),    
-  .ex_stall_i         (0                  ),
+  .ex_flush_i         (flush_mem_o        ),    
+  .ex_stall_i         (stall_ex_o         ),
 
   .ex_inst_i          (ex_inst_i          ),
   .ex_inslot_i        (ex_inslot_i        ),
@@ -263,12 +285,13 @@ execute EXECUTE
 
   .ex_inst_o          (mem_inst_i         ),
   .ex_inslot_o        (mem_inslot_i       ),
-  .ex_stallreq_o      (                   ),
+  .ex_stallreq_o      (streq_ex_i         ),
   .ex_pc_o            (mem_pc_i           ),
   .ex_inst_load_o     (mem_inst_load_i    ),
   .ex_memaddr_low_o   (mem_memaddr_low_i  ),
 
-  .ex_wdata_bp_o      (ex_wdata_bp        )
+  .ex_wdata_bp_o      (ex_wdata_bp        ),
+  .ex_nofwd_bp_o      (rf_ex_nofwd        )
 );
 
 alu ALU
@@ -298,8 +321,8 @@ mem MEM
   .mem_nofwd_i        (mem_nofwd_i),
   .mem_inst_load_i    (mem_inst_load_i),
 
-  .mem_stall_i        (0),
-  .mem_flush_i        (0),  
+  .mem_stall_i        (stall_mem_o),
+  .mem_flush_i        (flush_wb_o ),  
 
   .mem_inst_o         (wb_inst_i),
   .mem_inslot_o       (),
@@ -310,7 +333,8 @@ mem MEM
   .mem_pc_o           (wb_pc_i),
 
   .mem_wdata_bp       (mem_wdata_bp),
-  .mem_stall_o        ()
+  .mem_nofwd_bp       (rf_mem_nofwd),
+  .mem_stall_o        (streq_mem_i)
 
 );
 
@@ -319,8 +343,8 @@ writeback WRITEBACK
 (
   .clk                (clk),
   .rst_n              (resetn),
-  .wb_stall_i         (0),
-  .wb_flush_i         (0),
+  .wb_stall_i         (stall_wb_o),
+  .wb_flush_i         (flush_wb_o),
 
   .wb_memop_i         (wb_memop_i),
   .wb_wren_i          (wb_wren_i),
@@ -343,4 +367,27 @@ writeback WRITEBACK
   .debug_wb_rf_wnum   (debug_wb_rf_wnum),
   .debug_wb_rf_wdata  (debug_wb_rf_wdata)
 );
+
+control control
+(
+  .streq_pc_i         (0),
+  .streq_id_i         (streq_id_i),
+  .streq_ex_i         (streq_ex_i),
+  .streq_mem_i        (streq_mem_i),
+  .streq_wb_i         (0),
+  .exc_flag           (0),
+
+  .stall_pc_o         (stall_pc_o),
+  .stall_id_o         (stall_id_o),
+  .stall_ex_o         (stall_ex_o),
+  .stall_mem_o        (stall_mem_o),
+  .stall_wb_o         (stall_wb_o),
+
+  .flush_pc_o         (flush_pc_o),
+  .flush_id_o         (flush_id_o),
+  .flush_ex_o         (flush_ex_o),
+  .flush_mem_o        (flush_mem_o),
+  .flush_wb_o         (flush_wb_o)
+);
+
 endmodule

@@ -32,6 +32,7 @@ module mem
 	output wire [31: 0] mem_pc_o,
 	//for bypass
 	output wire [31: 0] mem_wdata_bp,
+	output wire 		mem_nofwd_bp,
 
 	output wire			mem_stall_o
 
@@ -72,6 +73,7 @@ module mem
 								| ({32{mem_memop_i[4]}} & lw_res );
 
 	assign 			mem_wdata_bp= mem_wdata_i;
+	assign 			mem_nofwd_bp= mem_nofwd_i;
 
 
 	wire [31: 0] 	mem_inst_next;
@@ -83,14 +85,14 @@ module mem
 	wire 			mem_memop_next;
 	wire [31: 0]	mem_pc_next;
 
-	assign  mem_inst_next  		= mem_inst_i;
-	assign  mem_inslot_next		= mem_inslot_i;
-	assign  mem_waddr_next 		= mem_waddr_i;
-	assign  mem_wdata_next 		= mem_inst_load_i ? load_res :
+	assign  mem_inst_next  		= mem_flush_i ? 0 : mem_inst_i;
+	assign  mem_inslot_next		= mem_flush_i ? 0 :mem_inslot_i;
+	assign  mem_waddr_next 		= mem_flush_i ? 0 :mem_waddr_i;
+	assign  mem_wdata_next 		= mem_flush_i ? 0 :mem_inst_load_i ? load_res :
 								  mem_wdata_i;
-	assign 	mem_wren_next		= mem_wren_i;
-	assign  mem_memop_next		= mem_memop_i;
-	assign  mem_pc_next			= mem_pc_i;
+	assign 	mem_wren_next		= mem_flush_i ? 0 :mem_wren_i;
+	assign  mem_memop_next		= mem_flush_i ? 0 :mem_memop_i;
+	assign  mem_pc_next			= mem_flush_i ? 0 :mem_pc_i;
 
 //for bypass
 

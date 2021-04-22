@@ -9,7 +9,7 @@ module writeback
 
 	input wire [`MMOP]		wb_memop_i,
 	input wire 				wb_wren_i,
-	input wire [ 4: 0]		wb_waddr_i,
+	input wire [4: 0]		wb_waddr_i,
 	input wire [31: 0]		wb_wdata_i,
 	input wire [31: 0]		wb_inst_i,
 

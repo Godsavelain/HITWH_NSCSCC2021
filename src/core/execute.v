@@ -57,7 +57,9 @@ module execute
  	output wire [ 1: 0]		ex_memaddr_low_o,
 
  	//bypass 
- 	output wire	[31: 0]		ex_wdata_bp_o
+ 	output wire	[31: 0]		ex_wdata_bp_o,
+ 	output wire 			ex_nofwd_bp_o
+
 
 );
 	
@@ -70,10 +72,10 @@ module execute
     wire 		[31: 0]		ex_inst_next;
     wire					ex_inslot_next;
     wire		[`MMOP]		ex_memop_next;
-    wire 					ex_nofwd_next;
     wire 		[31: 0]		ex_pc_next;
     wire					ex_inst_load_next;
     wire		[ 1: 0]		ex_memaddr_low_next;
+    wire 					ex_nofwd_next;
 
 
 //useful values
@@ -121,19 +123,20 @@ module execute
 	assign	ex_opr2_o		= ex_opr2_i;
 
 //to next stage
-	assign ex_wren_next		= ex_wren_i;
-	assign ex_waddr_next	= ex_waddr_i;
-	assign ex_wdata_next	= ex_alures_i;
-	assign ex_inst_next		= ex_inst_i;
-	assign ex_inslot_next   = ex_inslot_i;
-	assign ex_memop_next	= ex_memop_i;
-	assign ex_nofwd_next	= ex_nofwd_i;
-	assign ex_pc_next		= ex_pc_i;
-	assign ex_inst_load_next= op_lb | op_lbu | op_lh | op_lhu;
-	assign ex_memaddr_low_next = ex_memaddr_low;
+	assign ex_wren_next		= ex_flush_i ? 0 : ex_wren_i;
+	assign ex_waddr_next	= ex_flush_i ? 0 : ex_waddr_i;
+	assign ex_wdata_next	= ex_flush_i ? 0 : ex_alures_i;
+	assign ex_inst_next		= ex_flush_i ? 0 : ex_inst_i;
+	assign ex_inslot_next   = ex_flush_i ? 0 : ex_inslot_i;
+	assign ex_memop_next	= ex_flush_i ? 0 : ex_memop_i;
+	assign ex_nofwd_next	= ex_flush_i ? 0 : ex_nofwd_i;
+	assign ex_pc_next		= ex_flush_i ? 0 : ex_pc_i;
+	assign ex_inst_load_next= ex_flush_i ? 0 : op_lb | op_lbu | op_lh | op_lhu | op_lw;
+	assign ex_memaddr_low_next = ex_flush_i ? 0 : ex_memaddr_low;
 
 //to bypass
 	assign ex_wdata_bp_o	= ex_wdata_next;
+	assign ex_nofwd_bp_o	= ex_nofwd_i;
 
 //for mem
 	wire [1:0]  ex_memaddr_low; 						//地址最末两位
