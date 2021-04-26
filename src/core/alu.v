@@ -72,7 +72,7 @@ module alu
 
 	assign slt_result [31: 1] 	= 	31'b0;
 	assign slt_result [0]		=	(opr1[31] & ~opr2[31])
-								|	(~(opr1[31] ^ opr2) & add_res[31]);
+								|	((opr1[31] ~^ opr2[31]) & add_res[31]);
 
 	assign sltu_result [31: 1] 	= 	31'b0;
 	assign sltu_result [0]		=   ~cout;

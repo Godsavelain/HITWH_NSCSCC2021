@@ -33,6 +33,7 @@ wire         if_branch_en;
 wire [31: 0] branch_pc_i;
 wire [31: 0] if_inst_i;
 wire         if_in_delay_slot_i;
+wire [31: 0] if_pc_i;
 
 
 //id stage signals
@@ -145,12 +146,14 @@ pc PC
   .branch_pc_i        (branch_pc_i        ),
   .inst_i             (inst_sram_rdata    ),     
   .if_inslot_i        (if_in_delay_slot_i ),
+  .if_pc_i            (if_pc_i            ),
 
   .inst_sram_en       (inst_sram_en       ),  
   .if_pc_o            (id_pc_i            ),    
   .if_next_pc_o       (inst_sram_addr     ), 
   .if_inst_o          (id_inst_i          ),    
   .if_inslot_o        (id_inslot_i        ),
+  .next_pc_o          (if_pc_i            ),
 
   .inst_sram_wen      (inst_sram_wen      ),
   .inst_sram_wdata    (inst_sram_wdata    )

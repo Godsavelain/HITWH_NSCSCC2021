@@ -140,8 +140,8 @@ module execute
 
 //for mem
 	wire [1:0]  ex_memaddr_low; 						//地址最末两位
-	wire   ex_memwen_sb;
-	wire   ex_memwen_sh;
+	wire [3:0]  ex_memwen_sb;
+	wire [3:0]  ex_memwen_sh;
 	assign ex_memaddr_low	= ex_alures_i[1:0];
 	assign ex_memwen_sb		= ex_memaddr_low == 2'b00 ? 4'b0001:
 							  ex_memaddr_low == 2'b01 ? 4'b0010:

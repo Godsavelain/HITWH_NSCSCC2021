@@ -331,7 +331,7 @@ module decoder
 	assign id_ren1_o		= inst_add | inst_addi | inst_addu | inst_addiu | inst_sub | inst_subu
 							| inst_slt | inst_slti | inst_sltu | inst_sltiu | inst_div | inst_divu
 							| inst_mult| inst_multu| inst_and  | inst_andi  | inst_nor | inst_or
-							| inst_ori | inst_xori | inst_sllv | inst_srav  | inst_srlv| inst_beq
+							| inst_ori | inst_xor  | inst_xori | inst_sllv  | inst_srav  | inst_srlv| inst_beq
 							| inst_bne | inst_bgez | inst_bgtz | inst_blez  | inst_bltz| inst_bgezal
 							| inst_bltzal|inst_jr  | inst_jalr | inst_mthi  | inst_mtlo ;
 
