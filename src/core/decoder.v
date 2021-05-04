@@ -39,6 +39,8 @@ module decoder
  	output wire [31: 0]		id_opr1_o,
  	output wire [31: 0]		id_opr2_o,
  	output wire [31: 0]		id_offset_o,
+ 	output wire 			id_divinst_o,
+ 	output wire 			id_mduinst_o,
 
  	output wire 			id_wren_o,
  	output wire [ 4: 0]		id_waddr_o,
@@ -74,6 +76,7 @@ module decoder
  	wire [31: 0]  		id_rtvalue_next;
  	wire [`AOP] 		id_aluop_next;
  	wire [`MDOP] 		id_mduop_next;
+ 	wire 				id_mduinst_next;
  	wire [`MMOP] 		id_memop_next;
  	wire [`TOP ] 		id_tlbop_next;
     wire [`COP ] 		id_cacheop_next;
@@ -265,10 +268,10 @@ module decoder
 	assign inst_sra    = op_d[`OP_SPECIAL] & func_d[6'h03] & rs_d[5'h00];
 	assign inst_srav   = op_d[`OP_SPECIAL] & func_d[6'h07] & sa_d[5'h00];
 
-	assign inst_mfhi   = 0;
-	assign inst_mflo   = 0;
-	assign inst_mthi   = 0;
-	assign inst_mtlo   = 0;
+	assign inst_mfhi   = op_d[`OP_SPECIAL] & func_d[6'h10] & sa_d[5'h00];
+	assign inst_mflo   = op_d[`OP_SPECIAL] & func_d[6'h12] & sa_d[5'h00];
+	assign inst_mthi   = op_d[`OP_SPECIAL] & func_d[6'h11];
+	assign inst_mtlo   = op_d[`OP_SPECIAL] & func_d[6'h13];
 	
 	
 	assign inst_lb     = op_d[`OP_LB];
@@ -379,6 +382,12 @@ module decoder
 
 	assign id_inslot_next   = id_flush_i ? 0 : id_inslot_i;
 	assign id_inst_next 	= id_flush_i ? 0 : id_inst;
+
+	assign id_mduinst_next  = inst_mult | inst_multu | inst_div | inst_divu | inst_mthi | inst_mtlo;
+	assign id_divinst_next  = inst_div  | inst_divu;
+
+
+	assign id_mduop_next    = {inst_mtlo,inst_mthi ,inst_mflo,inst_mfhi,inst_divu,inst_div,inst_multu,inst_mult};
 	//for branch outputs
 	wire [31: 0] j_target;	//j and jal
     wire [31: 0] b_target;	//branch target
@@ -396,7 +405,7 @@ module decoder
     assign id_branch_pc_o   = inst_branch_b ? b_target :
     						  inst_branch_j ? j_target :
     						  id_reg1data_i;
-    assign id_nofwd_next 	= id_flush_i ? 0 : | mem_op;
+    assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo;
  	wire LZ;     // Less Than Zero
     wire GEZ;    // Greater Than or Equal to Zero
     wire LEZ;    // Less Than or Equal to Zero
@@ -438,6 +447,8 @@ DFFRE #(.WIDTH(32))			inst_next			(.d(id_inst_next), .q(id_inst_o), .en(en), .cl
 
 DFFRE #(.WIDTH(`AOP_W))		aluop_next			(.d(id_aluop_next), .q(id_aluop_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`MDOP_W))	mduop_next			(.d(id_mduop_next), .q(id_mduop_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))			mduinst_next		(.d(id_mduinst_next), .q(id_mduinst_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))			divinst_next		(.d(id_divinst_next), .q(id_divinst_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`MMOP_W))	memop_next			(.d(id_memop_next), .q(id_memop_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`TOP_W))		tlbop_next			(.d(id_tlbop_next), .q(id_tlbop_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`COP_W))		cacheop_next		(.d(id_cacheop_next), .q(id_cacheop_o), .en(en), .clk(clk), .rst_n(rst_n));
@@ -448,8 +459,6 @@ DFFRE #(.WIDTH(1))			c0ren_next			(.d(id_c0ren_next), .q(id_c0ren_o), .en(en), .
 DFFRE #(.WIDTH(1))			nofwd_next			(.d(id_nofwd_next), .q(id_nofwd_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 //尚未实现
-
-assign 				id_mduop_next = 0;
 
 assign 				id_tlbop_next = 0;
 assign 				id_cacheop_next = 0;

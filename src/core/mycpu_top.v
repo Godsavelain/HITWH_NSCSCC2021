@@ -53,6 +53,8 @@ wire [31: 0] ex_opr2_i;
 wire         ex_wren_i;
 wire [ 4: 0] ex_waddr_i;
 wire [31: 0] ex_rtvalue_i;
+wire         ex_divinst_i;
+wire         ex_mduinst_i;
 wire [31: 0] ex_offset_i;
 wire         ex_nofwd_i;
 
@@ -72,6 +74,21 @@ wire [31: 0] opr1;
 wire [31: 0] opr2;
 wire [`AOP]  alu_op;
 
+//to mdu
+wire [`MDOP]  mduop_i;
+wire [31: 0]  mdu_whi_in;
+wire [31: 0]  mdu_wlo_in;
+wire [31: 0]  mdu_opr1_i;
+wire [31: 0]  mdu_opr2_i;
+
+
+wire          hi_wen;
+wire [31: 0]  hi_o;
+wire          lo_wen;
+wire [31: 0]  lo_o;
+wire          is_active;
+wire          mdu_div_active;
+
 //mem stage signals
 wire [ 1: 0] mem_memaddr_low_i;
 wire         mem_nofwd_i;
@@ -84,17 +101,27 @@ wire [`MMOP] mem_memop_i;
 wire [ 4: 0] mem_waddr_i;
 wire [31: 0] mem_wdata_i;
 wire         mem_wren_i;
+wire         mem_mduinst_i;
 
 //writeback stage signals
 wire [`MMOP] wb_memop_i;
 wire         wb_wen_i;
 wire [ 4: 0] wb_waddr_i;
 wire [31: 0] wb_wdata_i;
+wire         wb_mduinst_i;
 
 wire [31: 0] wb_pc_i;
 wire [31: 0] wb_mem_addr_i;
 wire [31: 0] wb_mem_data_i;
 wire [31: 0] wb_inst_i;
+
+wire [31: 0] wb_hi_i;
+wire [31: 0] wb_lo_i;
+wire         wb_whien_i;
+wire         wb_wloen_i;
+wire         wb_inst_mfhi_i;
+wire         wb_inst_mflo_i;
+wire         mdu_s2_stallreq_o;
 
 //to regfile
 wire         rf_ren1_i;
@@ -131,6 +158,15 @@ wire        flush_id_o;
 wire        flush_ex_o;
 wire        flush_mem_o;
 wire        flush_wb_o;
+
+//to hilo
+wire [31: 0] whidata;
+wire [31: 0] wlodata;
+wire         whien;
+wire         wloen;
+
+wire [31: 0] hilo_hi_o;
+wire [31: 0] hilo_lo_o;
 
 // module declaration
 pc PC
@@ -194,6 +230,8 @@ decoder DECODER
   .id_opr1_o          (ex_opr1_i          ),
   .id_opr2_o          (ex_opr2_i          ),
   .id_offset_o        (ex_offset_i        ),
+  .id_divinst_o       (ex_divinst_i       ),
+  .id_mduinst_o       (ex_mduinst_i       ),
 
   .id_wren_o          (ex_wren_i          ),
   .id_waddr_o         (ex_waddr_i         ),
@@ -257,6 +295,8 @@ execute EXECUTE
   .ex_offset_i        (ex_offset_i        ),
   .ex_nofwd_i         (ex_nofwd_i         ),
   .ex_rtvalue_i       (ex_rtvalue_i       ),
+  .ex_divinst_i       (ex_divinst_i       ),
+  .ex_mduinst_i       (ex_mduinst_i       ),
 
   .ex_aluop_i         (ex_aluop_i         ),
   .ex_mduop_i         (ex_mduop_i         ),
@@ -270,7 +310,9 @@ execute EXECUTE
   .ex_c0ren_i         (ex_c0ren_i         ),
   .ex_c0addr_i        (ex_c0addr_i        ),
 
-    
+  .mdu_is_active      (is_active          ),
+  .mdu_div_active     (mdu_div_active     ),
+
   .ex_wren_o          (mem_wren_i         ),
   .ex_waddr_o         (mem_waddr_i        ),
   .ex_wdata_o         (mem_wdata_i        ),
@@ -280,6 +322,12 @@ execute EXECUTE
   .ex_memop_o         (mem_memop_i        ),
   .ex_opr1_o          (opr1               ),
   .ex_opr2_o          (opr2               ),
+
+  .ex_mdu_opr1_o      (mdu_opr1_i),
+  .ex_mdu_opr2_o      (mdu_opr2_i),
+  .ex_mduop_o         (mduop_i),
+  .ex_mdu_whi_o       (mdu_whi_in),
+  .ex_mdu_wlo_o       (mdu_wlo_in),
 
   .ex_menen_o         (data_sram_en       ),   
   .ex_memwen_o        (data_sram_wen      ),   
@@ -292,6 +340,7 @@ execute EXECUTE
   .ex_pc_o            (mem_pc_i           ),
   .ex_inst_load_o     (mem_inst_load_i    ),
   .ex_memaddr_low_o   (mem_memaddr_low_i  ),
+  .ex_mdu_inst_o      (mem_mduinst_i      ),
 
   .ex_wdata_bp_o      (ex_wdata_bp        ),
   .ex_nofwd_bp_o      (rf_ex_nofwd        )
@@ -303,6 +352,36 @@ alu ALU
   .opr2               (opr2               ),
   .alu_op             (alu_op             ),
   .alu_res            (ex_alures_i        )
+);
+
+mdu MDU
+(
+  .clk                (clk),
+  .rst_n              (resetn),
+  .mduop_i            (mduop_i),
+  .mdu_s1_stall_i     (stall_ex_o),
+  .mdu_s1_flush_i     (flush_mem_o),
+  .mdu_s2_stall_i     (stall_mem_o),
+  .mdu_s2_flush_i     (flush_wb_o),
+  .mdu_opr1_in        (mdu_opr1_i),
+  .mdu_opr2_in        (mdu_opr2_i),
+  .mdu_whi_in         (mdu_whi_in),
+  .mdu_wlo_in         (mdu_wlo_in),
+
+  .mdu_hi_i           (hilo_hi_o),
+  .mdu_lo_i           (hilo_lo_o),
+
+  
+  .hi_wen             (wb_whien_i),
+  .hi_o               (wb_hi_i),
+  .lo_wen             (wb_wloen_i),
+  .lo_o               (wb_lo_i),
+  .is_active          (is_active),
+  .mdu_div_active     (mdu_div_active),
+  .inst_mfhi_o        (wb_inst_mfhi_i),
+  .inst_mflo_o        (wb_inst_mflo_i),
+
+  .mdu_s2_stallreq_o  (mdu_s2_stallreq_o)
 );
 
 mem MEM
@@ -323,10 +402,12 @@ mem MEM
   .mem_wren_i         (mem_wren_i),
   .mem_nofwd_i        (mem_nofwd_i),
   .mem_inst_load_i    (mem_inst_load_i),
+  .mem_mduinst_i      (mem_mduinst_i),
 
   .mem_stall_i        (stall_mem_o),
   .mem_flush_i        (flush_wb_o ),  
 
+  .mem_s2_stallreq_i  (mdu_s2_stallreq_o),
   .mem_inst_o         (wb_inst_i),
   .mem_inslot_o       (),
 
@@ -334,6 +415,7 @@ mem MEM
   .mem_wdata_o        (wb_wdata_i),
   .mem_wren_o         (wb_wren_i),
   .mem_pc_o           (wb_pc_i),
+  .mem_mduinst_o      (wb_mduinst_i),
 
   .mem_wdata_bp       (mem_wdata_bp),
   .mem_nofwd_bp       (rf_mem_nofwd),
@@ -354,16 +436,29 @@ writeback WRITEBACK
   .wb_waddr_i         (wb_waddr_i),
   .wb_wdata_i         (wb_wdata_i),
   .wb_inst_i          (wb_inst_i),
+  .wb_mduinst_i       (wb_mduinst_i),
 
   .wb_pc_i            (wb_pc_i),
 
   .wb_mem_addr_i      (wb_mem_addr_i),
   .wb_mem_data_i      (wb_mem_data_i),
 
+  .wb_hi_i            (wb_hi_i),
+  .wb_lo_i            (wb_lo_i),
+  .wb_whien_i         (wb_whien_i),
+  .wb_wloen_i         (wb_wloen_i),
+  .wb_inst_mfhi_i     (wb_inst_mfhi_i),
+  .wb_inst_mflo_i     (wb_inst_mflo_i),
+
   .wb_wren_o          (rf_wren),
   .wb_waddr_o         (rf_waddr),
   .wb_wdata_o         (rf_wdata),
+  .wb_stallreq        (streq_wb_i),
 
+  .wb_whien_o         (whien),
+  .wb_wloen_o         (wloen),
+  .wb_hi_o            (whidata),
+  .wb_lo_o            (wlodata),
 
   .debug_wb_pc        (debug_wb_pc),
   .debug_wb_rf_wen    (debug_wb_rf_wen),
@@ -377,7 +472,7 @@ control control
   .streq_id_i         (streq_id_i),
   .streq_ex_i         (streq_ex_i),
   .streq_mem_i        (streq_mem_i),
-  .streq_wb_i         (0),
+  .streq_wb_i         (streq_wb_i),
   .exc_flag           (0),
 
   .stall_pc_o         (stall_pc_o),
@@ -391,6 +486,20 @@ control control
   .flush_ex_o         (flush_ex_o),
   .flush_mem_o        (flush_mem_o),
   .flush_wb_o         (flush_wb_o)
+
+);
+
+hilo HILO
+(
+  .clk                (clk),
+  .rst_n              (rst_n),
+  .whidata            (whidata),
+  .wlodata            (wlodata),
+  .whien              (whien),
+  .wloen              (wloen),
+
+  .rhidata            (hilo_hi_o),
+  .rlodata            (hilo_lo_o)
 );
 
 endmodule

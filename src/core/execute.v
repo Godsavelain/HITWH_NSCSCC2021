@@ -17,6 +17,8 @@ module execute
  	input wire [31: 0]		ex_offset_i,
  	input wire 				ex_nofwd_i,
  	input wire [31: 0]		ex_rtvalue_i,
+ 	input wire 				ex_divinst_i,
+ 	input wire 				ex_mduinst_i,
 
  	input wire [`AOP] 		ex_aluop_i,
  	input wire [`MDOP] 		ex_mduop_i,
@@ -29,8 +31,11 @@ module execute
     input wire          	ex_c0wen_i,
     input wire          	ex_c0ren_i,
     input wire [ 7: 0]  	ex_c0addr_i,
+   
+   //from mdu 
+    input wire 				mdu_is_active,//mdu单元正在工作
+    input wire 				mdu_div_active,//mdu单元正在执行除法
 
-    
     output wire				ex_wren_o,
     output wire [ 4: 0] 	ex_waddr_o,
     output wire [31: 0] 	ex_wdata_o,
@@ -42,6 +47,13 @@ module execute
     output wire [`MMOP] 	ex_memop_o,
     output wire [31: 0]		ex_opr1_o,
  	output wire [31: 0]		ex_opr2_o,
+
+ 	//to mdu
+ 	output wire [31: 0]		ex_mdu_opr1_o,
+ 	output wire [31: 0]		ex_mdu_opr2_o,
+ 	output wire [`MMOP] 	ex_mduop_o,
+ 	output wire [31: 0]		ex_mdu_whi_o,
+ 	output wire [31: 0]		ex_mdu_wlo_o,
 
  	//to mem
  	output wire				ex_menen_o,		//data_sram_en
@@ -55,6 +67,8 @@ module execute
  	output wire [31: 0]		ex_pc_o,
  	output wire 			ex_inst_load_o,
  	output wire [ 1: 0]		ex_memaddr_low_o,
+
+ 	output wire 			ex_mdu_inst_o,
 
  	//bypass 
  	output wire	[31: 0]		ex_wdata_bp_o,
@@ -76,6 +90,7 @@ module execute
     wire					ex_inst_load_next;
     wire		[ 1: 0]		ex_memaddr_low_next;
     wire 					ex_nofwd_next;
+    wire 					ex_mdu_inst_next;
 
 
 //useful values
@@ -133,7 +148,7 @@ module execute
 	assign ex_pc_next		= ex_flush_i ? 0 : ex_pc_i;
 	assign ex_inst_load_next= ex_flush_i ? 0 : op_lb | op_lbu | op_lh | op_lhu | op_lw;
 	assign ex_memaddr_low_next = ex_flush_i ? 0 : ex_memaddr_low;
-
+	assign ex_mdu_inst_next = ex_flush_i ? 0 : ex_mduinst_i;
 //to bypass
 	assign ex_wdata_bp_o	= ex_wdata_next;
 	assign ex_nofwd_bp_o	= ex_nofwd_i;
@@ -160,7 +175,12 @@ module execute
 							  op_sh ? {2{ex_rtvalue_i[15:0]}}:
 							  ex_rtvalue_i;   	//data_sram_wdata
 
-
+//to mdu
+	assign ex_mdu_opr1_o	= ex_opr1_i;
+	assign ex_mdu_opr2_o	= ex_opr2_i;
+	assign ex_mduop_o 		= ex_mduop_i;
+	assign ex_mdu_whi_o  	= ex_opr1_i;
+	assign ex_mdu_wlo_o  	= ex_opr1_i;
 //DFFREs
 DFFRE #(.WIDTH(1))		wren_next			(.d(ex_wren_next), .q(ex_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(5))		waddr_next			(.d(ex_waddr_next), .q(ex_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
@@ -175,8 +195,8 @@ DFFRE #(.WIDTH(2))		memaddr_low_next	(.d(ex_memaddr_low_next), .q(ex_memaddr_low
 
 
 
-//未完成
-assign ex_stallreq_o = 0;
+//除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指令
+assign ex_stallreq_o = (ex_divinst_i & mdu_is_active) | (ex_mduinst_i & mdu_div_active);
 
 
 

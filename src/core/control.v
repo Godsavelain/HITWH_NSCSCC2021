@@ -20,6 +20,7 @@ module control
 	output wire  flush_ex_o,
 	output wire  flush_mem_o,
 	output wire  flush_wb_o
+
 );
 
 	wire [4:0 ] stall;
@@ -40,5 +41,6 @@ assign flush_mem_o = exc_flag ? 1'b1 : stall[2] & ~stall[3];
 assign flush_ex_o  = exc_flag ? 1'b1 : stall[1] & ~stall[2];
 assign flush_id_o  = exc_flag ? 1'b1 : stall[0] & ~stall[1];
 assign flush_pc_o  = exc_flag ? 1'b1 : 0;
+
 
 endmodule

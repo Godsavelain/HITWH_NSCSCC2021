@@ -18,9 +18,13 @@ module mem
 	input wire 			mem_wren_i,
 	input wire			mem_nofwd_i,
 	input wire 			mem_inst_load_i,
+	input wire 			mem_mduinst_i,
 
 	input wire 			mem_stall_i,
-	input wire 			mem_flush_i,	
+	input wire 			mem_flush_i,
+
+	//from mdu
+	input wire 			mem_s2_stallreq_i,	
 
 	output wire [31: 0]	mem_inst_o,
 	output wire 		mem_inslot_o,
@@ -30,6 +34,7 @@ module mem
 	output wire [31: 0]	mem_wdata_o,
 	output wire 		mem_wren_o,
 	output wire [31: 0] mem_pc_o,
+	output wire 		mem_mduinst_o,
 	//for bypass
 	output wire [31: 0] mem_wdata_bp,
 	output wire 		mem_nofwd_bp,
@@ -84,6 +89,7 @@ module mem
 	wire 			mem_nofwd_next;
 	wire 			mem_memop_next;
 	wire [31: 0]	mem_pc_next;
+	wire 			mem_mduinst_next;
 
 	assign  mem_inst_next  		= mem_flush_i ? 0 : mem_inst_i;
 	assign  mem_inslot_next		= mem_flush_i ? 0 :mem_inslot_i;
@@ -93,6 +99,7 @@ module mem
 	assign 	mem_wren_next		= mem_flush_i ? 0 :mem_wren_i;
 	assign  mem_memop_next		= mem_flush_i ? 0 :mem_memop_i;
 	assign  mem_pc_next			= mem_flush_i ? 0 :mem_pc_i;
+	assign  mem_mduinst_next	= mem_mduinst_i;
 
 //for bypass
 
@@ -103,8 +110,9 @@ DFFRE #(.WIDTH(5))		waddr_next				(.d(mem_waddr_next), .q(mem_waddr_o), .en(en),
 DFFRE #(.WIDTH(32))		wdata_next				(.d(mem_wdata_next), .q(mem_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		wren_next				(.d(mem_wren_next), .q(mem_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		pc_next					(.d(mem_pc_next), .q(mem_pc_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))		mduinst_next			(.d(mem_mduinst_next), .q(mem_mduinst_o), .en(en), .clk(clk), .rst_n(rst_n));
 
-//未完成
-assign mem_stall_o = 0;
+
+assign mem_stall_o = mem_s2_stallreq_i;
 
 endmodule
