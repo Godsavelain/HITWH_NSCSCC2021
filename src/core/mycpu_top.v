@@ -50,7 +50,7 @@ wire         ex_inslot_i;
 wire [31: 0] ex_pc_i;
 wire [31: 0] ex_opr1_i;
 wire [31: 0] ex_opr2_i;
-wire         ex_wren_i;
+wire [ 3: 0] ex_wren_i;
 wire [ 4: 0] ex_waddr_i;
 wire [31: 0] ex_rtvalue_i;
 wire         ex_divinst_i;
@@ -100,12 +100,12 @@ wire [`MMOP] mem_memop_i;
 
 wire [ 4: 0] mem_waddr_i;
 wire [31: 0] mem_wdata_i;
-wire         mem_wren_i;
+wire [ 3: 0] mem_wren_i;
 wire         mem_mduinst_i;
 
 //writeback stage signals
 wire [`MMOP] wb_memop_i;
-wire         wb_wen_i;
+wire [ 3: 0] wb_wren_i;
 wire [ 4: 0] wb_waddr_i;
 wire [31: 0] wb_wdata_i;
 wire         wb_mduinst_i;
@@ -129,7 +129,7 @@ wire         rf_ren2_i;
 wire [ 4: 0] rf_raddr1_i;
 wire [ 4: 0] rf_raddr2_i;
 
-wire         rf_wren;
+wire [ 3: 0] rf_wren;
 wire [ 4: 0] rf_waddr;
 wire [31: 0] rf_wdata;
 

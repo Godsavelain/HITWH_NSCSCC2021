@@ -42,7 +42,7 @@ module decoder
  	output wire 			id_divinst_o,
  	output wire 			id_mduinst_o,
 
- 	output wire 			id_wren_o,
+ 	output wire [ 3: 0]	    id_wren_o,
  	output wire [ 4: 0]		id_waddr_o,
  	output wire [31: 0]		id_rtvalue_o,
 
@@ -71,7 +71,7 @@ module decoder
  	wire [31: 0]		id_opr2_next;
  	wire [31: 0]		id_offset_next;
  	wire [31: 0]		id_pc_next;	
- 	wire 				id_wren_next;
+ 	wire [ 3: 0]		id_wren_next;
  	wire [ 4: 0]		id_waddr_next;
  	wire [31: 0]  		id_rtvalue_next;
  	wire [`AOP] 		id_aluop_next;
@@ -175,6 +175,10 @@ module decoder
 	wire        inst_sb;
 	wire        inst_sh;
 	wire        inst_sw;
+	wire 		inst_lwl;
+	wire 		inst_lwr;
+	wire 		inst_swl;
+	wire 		inst_swr;
 
 //branch
 	wire        inst_beq;
@@ -220,8 +224,8 @@ module decoder
     assign waddr_is_rt	= inst_addi   | inst_addiu  | inst_slti | inst_sltiu 
     					| inst_andi   | inst_lui    | inst_ori  | inst_xori 
     					| inst_lb 	  | inst_lbu 	| inst_lh 	| inst_lhu
-    					| inst_lw 	  | inst_mfc0;
-    assign mul_div 		= inst_div 	  | inst_divu 	|inst_mult 	|inst_multu;
+    					| inst_lw 	  | inst_mfc0	| inst_lwl  | inst_lwr;
+    assign mul_div 		= inst_div 	  | inst_divu 	|inst_mult 	| inst_multu;
 
     //to regfile
 	assign id_reg1addr_o	=	rs;
@@ -268,6 +272,7 @@ module decoder
 	assign inst_sra    = op_d[`OP_SPECIAL] & func_d[6'h03] & rs_d[5'h00];
 	assign inst_srav   = op_d[`OP_SPECIAL] & func_d[6'h07] & sa_d[5'h00];
 
+
 	assign inst_mfhi   = op_d[`OP_SPECIAL] & func_d[6'h10] & sa_d[5'h00];
 	assign inst_mflo   = op_d[`OP_SPECIAL] & func_d[6'h12] & sa_d[5'h00];
 	assign inst_mthi   = op_d[`OP_SPECIAL] & func_d[6'h11];
@@ -282,6 +287,10 @@ module decoder
 	assign inst_sb     = op_d[`OP_SB];
 	assign inst_sh     = op_d[`OP_SH];
 	assign inst_sw     = op_d[`OP_SW];
+	assign inst_lwl    = op_d[`OP_LWL];
+	assign inst_lwr    = op_d[`OP_LWR];
+	assign inst_swl    = op_d[`OP_SWL];
+	assign inst_swr    = op_d[`OP_SWR];
 
 	//branch
 	assign inst_beq    = op_d[`OP_BEQ];
@@ -307,7 +316,7 @@ module decoder
 	assign alu_op[ 0] = inst_addu | inst_addiu | inst_lw | inst_lhu | inst_lh 
 					  | inst_add  | inst_lbu   | inst_lb | inst_sw  | inst_sh
 					  | inst_addi | inst_sb    | inst_jal| inst_jalr| inst_bgezal
-								  | inst_bltzal;
+					  |	inst_lwl  | inst_lwr   | inst_swl| inst_swr	| inst_bltzal;
 	assign alu_op[ 1] = inst_subu | inst_sub;
 	assign alu_op[ 2] = inst_slt  | inst_slti;
 	assign alu_op[ 3] = inst_sltu | inst_sltiu;
@@ -328,26 +337,32 @@ module decoder
 	assign mem_op[5]  = inst_sb;
 	assign mem_op[6]  = inst_sh;
 	assign mem_op[7]  = inst_sw;
+	assign mem_op[8]  = inst_lwl;
+	assign mem_op[9]  = inst_lwr;
+	assign mem_op[10] = inst_swl;
+	assign mem_op[11] = inst_swr;
 
 //transfer info to EX stage
 	assign id_pc_next 		= id_flush_i ? 0 : id_pc_i;
 	assign id_ren1_o		= inst_add | inst_addi | inst_addu | inst_addiu | inst_sub | inst_subu
 							| inst_slt | inst_slti | inst_sltu | inst_sltiu | inst_div | inst_divu
 							| inst_mult| inst_multu| inst_and  | inst_andi  | inst_nor | inst_or
-							| inst_ori | inst_xor  | inst_xori | inst_sllv  | inst_srav  | inst_srlv| inst_beq
+							| inst_ori | inst_xor  | inst_xori | inst_sllv  | inst_srav| inst_srlv| inst_beq
 							| inst_bne | inst_bgez | inst_bgtz | inst_blez  | inst_bltz| inst_bgezal
-							| inst_bltzal|inst_jr  | inst_jalr | inst_mthi  | inst_mtlo ;
+							| inst_bltzal|inst_jr  | inst_jalr | inst_mthi  | inst_mtlo
+							| inst_lw  | inst_lh   | inst_lhu  | inst_lb 	| inst_lbu 
+							| inst_sw  | inst_sh   | inst_sb   | inst_swl   | inst_swr   ;
 
 	assign id_ren2_o		= inst_add | inst_addu | inst_sub  | inst_subu  | inst_sra  | inst_sll
 							| inst_slt | inst_sltu | inst_div  | inst_divu  | inst_srl
 							| inst_mult| inst_multu| inst_and  | inst_nor   | inst_or
 							| inst_sllv| inst_srav | inst_srlv | inst_beq
-							| inst_bne | inst_sb   | inst_sh   | inst_sw    | inst_mtc0 ;
+							| inst_bne | inst_sb   | inst_sh   | inst_sw    | inst_swl   | inst_swr| inst_mtc0 ;
 
- 	assign id_wren_next 	= id_flush_i ? 0 : ~mul_div & ~inst_beq & ~inst_bne & ~inst_bgez & 
+ 	assign id_wren_next 	= id_flush_i ? 0 : {4{~mul_div & ~inst_beq & ~inst_bne & ~inst_bgez & 
  							  ~inst_bgtz & ~inst_blez & ~inst_bltz & ~inst_j &
  							  ~inst_mthi & ~inst_mtlo & ~inst_break & ~inst_syscall &
- 							  ~inst_sw   & ~inst_sh   & ~inst_sb & ~inst_eret & ~inst_mtc0;
+ 							  ~inst_sw   & ~inst_sh   & ~inst_sb & ~inst_eret & ~inst_mtc0 & ~inst_swl & ~inst_swr}};
  	assign id_rtvalue_next  = id_flush_i ? 0 : id_reg2data_i;						  
 
  	assign id_aluop_next	= id_flush_i ? 0 : alu_op;
@@ -356,7 +371,7 @@ module decoder
 	assign src1_is_sa   	= inst_sll   | inst_srl | inst_sra;
 	assign src1_is_pc   	= inst_jal 	 | inst_jalr  | inst_bgezal| inst_bltzal;
 	assign src2_is_imm_s  	= inst_addi  | inst_addiu | inst_slti  | inst_sltiu | inst_lb  | inst_lbu  
-							| inst_lh    | inst_lhu   | inst_lw    | inst_sw    | inst_sh  | inst_sb; 
+							| inst_lh    | inst_lhu   | inst_lw    | inst_sw    | inst_sh  | inst_sb | inst_lwl | inst_lwr | inst_swl | inst_swr; 
 	assign src2_is_imm_u	= inst_andi  | inst_lui   | inst_ori   | inst_xori  ;
 	assign src2_is_8    	= inst_jal 	 | inst_jalr  | inst_bgezal| inst_bltzal;
 
@@ -405,7 +420,7 @@ module decoder
     assign id_branch_pc_o   = inst_branch_b ? b_target :
     						  inst_branch_j ? j_target :
     						  id_reg1data_i;
-    assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo;
+    assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo ;
  	wire LZ;     // Less Than Zero
     wire GEZ;    // Greater Than or Equal to Zero
     wire LEZ;    // Less Than or Equal to Zero
@@ -437,7 +452,7 @@ DFFRE #(.WIDTH(32))			opr2_next			(.d(id_opr2_next), .q(id_opr2_o), .en(en), .cl
 
 DFFRE #(.WIDTH(32))			offset_next			(.d(id_offset_next), .q(id_offset_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			pc_next				(.d(id_pc_next), .q(id_pc_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))			wren_next			(.d(id_wren_next), .q(id_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(4))			wren_next			(.d(id_wren_next), .q(id_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(5))			waddr_next			(.d(id_waddr_next), .q(id_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			inslot_next			(.d(id_inslot_next), .q(id_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			rtvalue_next		(.d(id_rtvalue_next), .q(id_rtvalue_o), .en(en), .clk(clk), .rst_n(rst_n));

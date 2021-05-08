@@ -12,7 +12,7 @@ module execute
  	input wire [31: 0]		ex_pc_i,
  	input wire [31: 0]		ex_opr1_i,
  	input wire [31: 0]		ex_opr2_i,
- 	input wire 				ex_wren_i,
+ 	input wire [ 3: 0]		ex_wren_i,
  	input wire [ 4: 0]		ex_waddr_i,
  	input wire [31: 0]		ex_offset_i,
  	input wire 				ex_nofwd_i,
@@ -36,7 +36,7 @@ module execute
     input wire 				mdu_is_active,//mdu单元正在工作
     input wire 				mdu_div_active,//mdu单元正在执行除法
 
-    output wire				ex_wren_o,
+    output wire	[ 3: 0]	    ex_wren_o,
     output wire [ 4: 0] 	ex_waddr_o,
     output wire [31: 0] 	ex_wdata_o,
     output wire 			ex_nofwd_o,
@@ -80,7 +80,7 @@ module execute
 	wire					en;
 	assign  en 				= ~ ex_stall_i; 
 	
-    wire					ex_wren_next;
+    wire		[ 3: 0]		ex_wren_next;
     wire 		[ 4: 0] 	ex_waddr_next;
     wire		[31: 0]		ex_wdata_next;
     wire 		[31: 0]		ex_inst_next;
@@ -112,6 +112,10 @@ module execute
 	wire	op_sb;
 	wire	op_sh;
 	wire	op_sw;
+	wire 	op_lwl;
+	wire 	op_lwr;
+	wire 	op_swl;
+	wire 	op_swr;
 
 	assign 	s_opr1			= ex_opr1_i[31];
 	assign 	s_opr2			= ex_opr2_i[31];
@@ -131,6 +135,10 @@ module execute
 	assign  op_sb 			= ex_memop_i[5];
 	assign  op_sh 			= ex_memop_i[6];
 	assign  op_sw 			= ex_memop_i[7];
+	assign  op_lwl 			= ex_memop_i[8];
+	assign  op_lwr 			= ex_memop_i[9];
+	assign  op_swl 			= ex_memop_i[10];
+	assign  op_swr 			= ex_memop_i[11];
 
 //to alu
 	assign	ex_aluop_o		= ex_aluop_i;
@@ -146,7 +154,7 @@ module execute
 	assign ex_memop_next	= ex_flush_i ? 0 : ex_memop_i;
 	assign ex_nofwd_next	= ex_flush_i ? 0 : ex_nofwd_i;
 	assign ex_pc_next		= ex_flush_i ? 0 : ex_pc_i;
-	assign ex_inst_load_next= ex_flush_i ? 0 : op_lb | op_lbu | op_lh | op_lhu | op_lw;
+	assign ex_inst_load_next= ex_flush_i ? 0 : op_lb | op_lbu | op_lh | op_lhu | op_lw | op_lwl | op_lwr;
 	assign ex_memaddr_low_next = ex_flush_i ? 0 : ex_memaddr_low;
 	assign ex_mdu_inst_next = ex_flush_i ? 0 : ex_mduinst_i;
 //to bypass
@@ -154,9 +162,15 @@ module execute
 	assign ex_nofwd_bp_o	= ex_nofwd_i;
 
 //for mem
-	wire [1:0]  ex_memaddr_low; 						//地址最末两位
-	wire [3:0]  ex_memwen_sb;
-	wire [3:0]  ex_memwen_sh;
+	wire [ 1: 0]  ex_memaddr_low; 						//地址最末两位
+	wire [ 3: 0]  ex_memwen_sb;
+	wire [ 3: 0]  ex_memwen_sh;
+	wire [ 3: 0]  ex_memwen_swl;
+	wire [ 3: 0]  ex_memwen_swr;
+
+	wire [31: 0]  swl_data; 
+	wire [31: 0]  swr_data; 
+
 	assign ex_memaddr_low	= ex_alures_i[1:0];
 	assign ex_memwen_sb		= ex_memaddr_low == 2'b00 ? 4'b0001:
 							  ex_memaddr_low == 2'b01 ? 4'b0010:
@@ -165,14 +179,36 @@ module execute
 	assign ex_memwen_sh		= ex_memaddr_low == 2'b00 ? 4'b0011:
 							  4'b1100;
 
+	assign ex_memwen_swl	= ex_memaddr_low == 2'b00 ? 4'b0001:
+							  ex_memaddr_low == 2'b01 ? 4'b0011:
+							  ex_memaddr_low == 2'b10 ? 4'b0111:
+							  4'b1111;
+
+	assign ex_memwen_swr	= ex_memaddr_low == 2'b00 ? 4'b1111:
+							  ex_memaddr_low == 2'b01 ? 4'b1110:
+							  ex_memaddr_low == 2'b10 ? 4'b1100:
+							  4'b1000;
+
+	assign swl_data			= ex_memaddr_low == 2'b00 ? {4{ex_rtvalue_i[31:24]}} :
+							  ex_memaddr_low == 2'b01 ? {2{ex_rtvalue_i[31:16]}} :
+							  ex_memaddr_low == 2'b10 ? {8'b0 , {ex_rtvalue_i[31:8]}} :
+							  ex_rtvalue_i;
+	assign swr_data			= ex_memaddr_low == 2'b00 ? ex_rtvalue_i:
+							  ex_memaddr_low == 2'b01 ? {{ex_rtvalue_i[23: 0]} , 8'b0}:
+							  ex_memaddr_low == 2'b10 ? {2{ex_rtvalue_i[15: 0]}} 	 :
+							  {4{ex_rtvalue_i[ 7: 0]}};
 	assign ex_menen_o 		= |ex_memop_i;	    //使能
 	assign ex_memwen_o 		= op_sb ? ex_memwen_sb :
 							  op_sh ? ex_memwen_sh :
 							  op_sw ? 4'b1111	   :
+							  op_swl? ex_memwen_swl:
+							  op_swr? ex_memwen_swr:
 							  4'b0000; 	    			//写使能	
 	assign ex_memaddr_o 	= {ex_alures_i[31:2],2'b00};		//data_sram_addr  访存地址通过alu计算
 	assign ex_memwdata_o 	= op_sb ? {4{ex_rtvalue_i[7:0]}} :
 							  op_sh ? {2{ex_rtvalue_i[15:0]}}:
+							  op_swl? swl_data				 :
+							  op_swr? swr_data				 :
 							  ex_rtvalue_i;   	//data_sram_wdata
 
 //to mdu
@@ -182,7 +218,7 @@ module execute
 	assign ex_mdu_whi_o  	= ex_opr1_i;
 	assign ex_mdu_wlo_o  	= ex_opr1_i;
 //DFFREs
-DFFRE #(.WIDTH(1))		wren_next			(.d(ex_wren_next), .q(ex_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(4))		wren_next			(.d(ex_wren_next), .q(ex_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(5))		waddr_next			(.d(ex_waddr_next), .q(ex_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		wdata_next			(.d(ex_wdata_next), .q(ex_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		inst_next			(.d(ex_inst_next), .q(ex_inst_o), .en(en), .clk(clk), .rst_n(rst_n));

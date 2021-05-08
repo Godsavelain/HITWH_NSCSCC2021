@@ -8,8 +8,8 @@ module writeback
 	input wire 				wb_flush_i,
 
 	input wire [`MMOP]		wb_memop_i,
-	input wire 				wb_wren_i,
-	input wire [4: 0]		wb_waddr_i,
+	input wire [ 3: 0]		wb_wren_i,
+	input wire [ 4: 0]		wb_waddr_i,
 	input wire [31: 0]		wb_wdata_i,
 	input wire [31: 0]		wb_inst_i,
 	input wire 				wb_mduinst_i,
@@ -29,7 +29,7 @@ module writeback
 	input wire 				wb_inst_mflo_i,
 
 	//to regfile
-	output wire 			wb_wren_o,
+	output wire [ 3: 0]		wb_wren_o,
 	output wire [ 4: 0]		wb_waddr_o,
 	output wire [31: 0]		wb_wdata_o,
 
@@ -59,7 +59,7 @@ module writeback
 	assign wb_waddr_o			= wb_waddr_i;
 	assign wb_wdata_o  			= wb_wdata_final;
 
-	assign debug_wb_rf_wen 		= wb_stallreq ? 0 : {4{wb_wren_i}};
+	assign debug_wb_rf_wen 		= wb_stallreq ? 0 : wb_wren_i;
 	assign debug_wb_rf_wnum		= wb_stallreq ? 0 : wb_waddr_i;
 	assign debug_wb_rf_wdata	= wb_stallreq ? 0 : wb_wdata_final;
 

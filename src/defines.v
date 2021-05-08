@@ -1,7 +1,7 @@
 // Bus Width
 `define         AOP_W                   12
 `define         MDOP_W                  8
-`define         MMOP_W                  8
+`define         MMOP_W                  12
 `define         AOP                     `AOP_W-1: 0
 `define         MDOP                    `MDOP_W-1: 0
 `define         MMOP                    `MMOP_W-1: 0
