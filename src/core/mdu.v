@@ -14,6 +14,9 @@ module mdu
 	input wire [31: 0]	mdu_whi_in,
 	input wire [31: 0]	mdu_wlo_in,
 
+	//from ex DFF Q
+	
+
 	//from hilo
 	input wire [31: 0]  mdu_hi_i,
 	input wire [31: 0]  mdu_lo_i,

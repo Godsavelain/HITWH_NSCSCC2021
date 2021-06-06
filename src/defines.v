@@ -294,49 +294,39 @@
 `define         COP_D_Hit_Wb_Invl       `COP_W'b111
 
 /*--------------------Exceptions--------------------*/
+
+`define         ExcE_W              9
 `define         Excs_W              21
-`define         ExcT_W              4
+`define         ExcT_W              9
 `define         Excs                `Excs_W-1: 0
 `define         ExcT                `ExcT_W-1: 0
+`define         ExcE                `ExcE_W-1: 0
+
 
 // Index of exception vector
-`define         Exc_NMI             0
-`define         Exc_Intr            1
-`define         Exc_I_AdE           2
-`define         Exc_I_TLBR          3
-`define         Exc_I_TLBI          4
-`define         Exc_I_BusE          5
-`define         Exc_CpU             6
-`define         Exc_CpUN            8: 7
-`define         Exc_RI              9
-`define         Exc_Ov              10
-`define         Exc_Trap            11
-`define         Exc_SysC            12
-`define         Exc_Bp              13
-`define         Exc_D_AdE           14
-`define         Exc_D_TLBR          15
-`define         Exc_D_TLBI          16
-`define         Exc_D_TLBM          17
-`define         Exc_D_BusE          18
-`define         Exc_ERET            19
+//`define         Exc_NMI             0
+`define         Exc_Intr            0
+`define         Exc_AdEL1           1
+`define         Exc_AdEL2           2
+`define         Exc_AdES            3
+`define         Exc_Ov              4
+`define         Exc_SysC            5
+`define         Exc_Bp              6
+`define         Exc_RI              7
+`define         Exc_ERET            8
 `define         Exc_Wait            20  //Not really an exception
 
 // Exception Types
 `define         ExcT_NoExc          `ExcT_W'h00
-`define         ExcT_Intr           `ExcT_W'h01
-`define         ExcT_CpU            `ExcT_W'h02
-`define         ExcT_RI             `ExcT_W'h03
-`define         ExcT_Ov             `ExcT_W'h04
-`define         ExcT_Trap           `ExcT_W'h05
-`define         ExcT_SysC           `ExcT_W'h06
-`define         ExcT_Bp             `ExcT_W'h07
-`define         ExcT_AdE            `ExcT_W'h08
-`define         ExcT_TLBR           `ExcT_W'h09
-`define         ExcT_TLBI           `ExcT_W'h0A
-`define         ExcT_TLBM           `ExcT_W'h0B
-`define         ExcT_IBE            `ExcT_W'h0C
-`define         ExcT_DBE            `ExcT_W'h0D
-`define         ExcT_ERET           `ExcT_W'h0E
+`define         ExcT_Intr           9'b000000001
+`define         ExcT_AdEL1          9'b000000010
+`define         ExcT_AdEL2          9'b000000100
+`define         ExcT_AdES           9'b000001000
+`define         ExcT_Ov             9'b000010000
+`define         ExcT_SysC           9'b000100000
+`define         ExcT_Bp             9'b001000000
+`define         ExcT_RI             9'b010000000
+`define         ExcT_ERET           9'b100000000
 
 // Cause.ExcCode
 `define         ExcC_Intr           5'h00

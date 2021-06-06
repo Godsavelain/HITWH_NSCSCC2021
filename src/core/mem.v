@@ -4,6 +4,7 @@ module mem
 (
 	input wire			clk,
 	input wire			rst_n,
+	input wire [`Excs] 	mem_excs_i,
 
 	input wire [31: 0]	mem_memdata_i,	//data from data sram
 
