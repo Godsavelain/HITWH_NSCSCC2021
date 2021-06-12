@@ -9,7 +9,6 @@ module execute
 
 	input wire [31: 0] 		ex_inst_i,
  	input wire 		 		ex_inslot_i,
- 	input wire [ 5: 0] 		ex_intr_i,
  	input wire [31: 0]		ex_pc_i,
  	input wire [31: 0]		ex_opr1_i,
  	input wire [31: 0]		ex_opr2_i,
@@ -23,6 +22,7 @@ module execute
 
  	input wire [`ExcE] 		ex_excs_i,
  	input wire 				ex_has_exc_i,
+ 	input wire 				ex_ov_inst_i,
 
  	input wire [`AOP] 		ex_aluop_i,
  	input wire [`MDOP] 		ex_mduop_i,
@@ -31,6 +31,7 @@ module execute
     input wire [`COP ] 		ex_cacheop_i,
 
     input wire	[31: 0]		ex_alures_i,
+    input wire 				ex_aluov_i,
 
     input wire          	ex_c0wen_i,
     input wire          	ex_c0ren_i,
@@ -73,10 +74,10 @@ module execute
  	output wire [ 1: 0]		ex_memaddr_low_o,
  	output wire [`ExcE] 	ex_excs_o,
  	output wire 			ex_has_exc_o,
- 	output wire [ 5: 0] 	ex_intr_o,
  	output wire          	ex_c0wen_o,
     output wire          	ex_c0ren_o,
     output wire [ 7: 0]  	ex_c0addr_o,
+    output wire [31: 0]		ex_c0_wdata_o,
 
  	output wire 			ex_mdu_inst_o,
 
@@ -103,15 +104,13 @@ module execute
     wire 					ex_mdu_inst_next;
  	wire 		[`ExcE] 	ex_excs_next;
  	wire 					ex_has_exc_next;
- 	wire 		[ 5: 0] 	ex_intr_next;
   	wire          			ex_c0wen_next;
     wire          			ex_c0ren_next;
-    wire 		[ 7: 0]  	ex_c0addr_next;    
+    wire 		[ 7: 0]  	ex_c0addr_next;  
+    wire 		[31: 0]  	ex_c0_wdata_next;  
 
 //useful values
-	wire 	s_opr1;			
-	wire 	s_opr2;			
-	wire 	s_res;			
+		
 	wire 	ov;
 
 	wire	opr_lt;		
@@ -133,10 +132,7 @@ module execute
 	wire 	op_swl;
 	wire 	op_swr;
 
-	assign 	s_opr1			= ex_opr1_i[31];
-	assign 	s_opr2			= ex_opr2_i[31];
-	assign 	s_res			= ex_alures_i[31];
-	assign  ov				= (~(s_opr1^s_opr2))&(s_opr1^s_res);
+	assign  ov				= ex_aluov_i & ex_ov_inst_i;
 
 	assign	opr_lt			= $signed(ex_opr1_i) < $signed(ex_opr2_i);
 	assign	opr_ltu 		= ex_opr1_i < ex_opr2_i;
@@ -174,16 +170,16 @@ module execute
 	assign ex_inst_load_next= ex_flush_i ? 0 : op_lb | op_lbu | op_lh | op_lhu | op_lw | op_lwl | op_lwr;
 	assign ex_memaddr_low_next = ex_flush_i ? 0 : ex_memaddr_low;
 	assign ex_mdu_inst_next = ex_flush_i ? 0 : ex_mduinst_i;
-	assign ex_excs_next[`ExcE_W-1: 5]	= ex_excs_i[`ExcE_W-1: 4];
-	assign ex_excs_next[4] 	= ov;
-	assign ex_excs_next[3] 	= (ex_memaddr_low[0] & op_sh) | ((ex_memaddr_low[1:0] != 00) & op_sw);
-	assign ex_excs_next[2] 	= (ex_memaddr_low[0] &(op_lh & op_lhu)) | ((ex_memaddr_low[1:0] != 00) & op_lw);;
-	assign ex_excs_next[ 1: 0] 	= ex_excs_i[ 1: 0];
- 	assign ex_has_exc_next	= ex_has_exc_i | ov ; 
- 	assign ex_intr_next		= ex_intr_i;
-   	assign ex_c0wen_next	= ex_c0wen_i;
-    assign ex_c0ren_next	= ex_c0ren_i;
-    assign ex_c0addr_next	= ex_c0addr_i;  
+	assign ex_excs_next[`ExcE_W-1: 5]	= ex_flush_i ? 0 : ex_excs_i[`ExcE_W-1: 5];
+	assign ex_excs_next[4] 	= ex_flush_i ? 0 : ov;
+	assign ex_excs_next[3] 	= ex_flush_i ? 0 : (ex_memaddr_low[0] & op_sh) | ((ex_memaddr_low[1:0] != 00) & op_sw);
+	assign ex_excs_next[2] 	= ex_flush_i ? 0 : (ex_memaddr_low[0] &(op_lh & op_lhu)) | ((ex_memaddr_low[1:0] != 00) & op_lw);;
+	assign ex_excs_next[ 1: 0] 	= ex_flush_i ? 0 : ex_excs_i[ 1: 0];
+ 	assign ex_has_exc_next	= ex_flush_i ? 0 :ex_has_exc_i | ov ; 
+   	assign ex_c0wen_next	= ex_flush_i ? 0 : ex_c0wen_i;
+    assign ex_c0ren_next	= ex_flush_i ? 0 : ex_c0ren_i;
+    assign ex_c0addr_next	= ex_flush_i ? 0 : ex_c0addr_i;
+    assign ex_c0_wdata_next = ex_flush_i ? 0 : ex_rtvalue_i;
 //to bypass
 	assign ex_wdata_bp_o	= ex_wdata_next;
 	assign ex_nofwd_bp_o	= ex_nofwd_i;
@@ -224,7 +220,7 @@ module execute
 							  ex_memaddr_low == 2'b01 ? {{ex_rtvalue_i[23: 0]} , 8'b0}:
 							  ex_memaddr_low == 2'b10 ? {2{ex_rtvalue_i[15: 0]}} 	 :
 							  {4{ex_rtvalue_i[ 7: 0]}};
-	assign ex_memen_o 		= |ex_memop_i;	    //使能
+	assign ex_memen_o 		= ex_flush_i ? 0 : (|ex_memop_i) & (~ex_has_exc_i);	    //使能
 	assign ex_memwen_o 		= op_sb ? ex_memwen_sb :
 							  op_sh ? ex_memwen_sh :
 							  op_sw ? 4'b1111	   :
@@ -260,7 +256,8 @@ DFFRE #(.WIDTH(1))		has_exc_next		(.d(ex_has_exc_next), .q(ex_has_exc_o), .en(en
 DFFRE #(.WIDTH(6))		intr_next			(.d(ex_intr_next), .q(ex_intr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		c0wen_next			(.d(ex_c0wen_next), .q(ex_c0wen_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		c0ren_next			(.d(ex_c0ren_next), .q(ex_c0ren_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(8))		c0addr_next			(.d(ex_intr_next), .q(ex_intr_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(32))		c0data_next			(.d(ex_c0_wdata_next), .q(ex_c0_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(8))		c0addr_next			(.d(ex_c0addr_next), .q(ex_c0addr_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 //除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指令

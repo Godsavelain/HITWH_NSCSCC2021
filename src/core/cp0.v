@@ -16,17 +16,17 @@ module cp0
 	input wire 	[31: 0]	cp0_baddr_i,//来自Exceptions，地址异常的地址
 	input wire 	[ 1: 0]	cp0_cpun_i, //来自Exceptions，协处理器缺失异常
 	input wire 			cp0_inslot_i,
-	input wire 	[31: 0]	cp0_issave_i,//当前指令写内存，来自MEM
+	//input wire 	[31: 0]	cp0_issave_i,//当前指令写内存，来自MEM
 
 	output reg  [31: 0] cp0_rdata_o,//读出数据
 	//output reg  [31: 0] Index_o,
 	//output reg  [31: 0] Random_o,
-	output reg  [31: 0] Status_o,
-	output reg  [31: 0] Cause_o,
-	output reg  [31: 0] EPC_o,
-	output reg  [31: 0] Config_o,
-	output reg  [31: 0] ErrorEPC_o,
-	output reg 			exc_intr//标记产生中断
+	output wire  [31: 0] Status_o,
+	output wire  [31: 0] Cause_o,
+	output wire  [31: 0] EPC_o,
+	output wire  [31: 0] Config_o,
+	output wire  [31: 0] ErrorEPC_o,
+	output wire 		exc_intr//标记产生中断
 );
 
     // Count & Compare
@@ -195,7 +195,7 @@ module cp0
     always @(posedge clk, negedge rst_n) begin
         if(!rst_n) begin
             BadVAddr        <= 0;
-            Count2         <= 0;
+            Count2          <= 0;
             timer_intr      <= 0;
             Compare         <= 0;
             Status_BEV      <= 1;

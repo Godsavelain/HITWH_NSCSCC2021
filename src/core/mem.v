@@ -4,7 +4,6 @@ module mem
 (
 	input wire			clk,
 	input wire			rst_n,
-	input wire [`Excs] 	mem_excs_i,
 
 	input wire [31: 0]	mem_memdata_i,	//data from data sram
 
@@ -16,6 +15,8 @@ module mem
 
 	input wire [ 4: 0]	mem_waddr_i,
 	input wire [31: 0]	mem_wdata_i,
+	input wire 			mem_c0_ren_i,
+	input wire [31: 0]	mem_c0data_i,
 	input wire [ 3: 0]	mem_wren_i,
 	input wire			mem_nofwd_i,
 	input wire 			mem_inst_load_i,
@@ -143,7 +144,7 @@ module mem
 	assign  mem_inst_next  		= mem_flush_i ? 0 :mem_inst_i;
 	assign  mem_inslot_next		= mem_flush_i ? 0 :mem_inslot_i;
 	assign  mem_waddr_next 		= mem_flush_i ? 0 :mem_waddr_i;
-	assign  mem_wdata_next 		= mem_flush_i ? 0 :mem_inst_load_i ? load_res :
+	assign  mem_wdata_next 		= mem_flush_i ? 0 :mem_c0_ren_i ? mem_c0data_i :mem_inst_load_i ? load_res :
 								  mem_wdata_i;
 	assign 	mem_wren_next		= mem_flush_i ? 0 : mem_memop_i[8] ? lwl_wren :
 								  					mem_memop_i[9] ? lwr_wren :

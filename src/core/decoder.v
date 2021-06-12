@@ -19,10 +19,6 @@ module decoder
 	input wire [31: 0]		id_reg1data_i,
 	input wire [31: 0]		id_reg2data_i,
 
-	//exceptions
-	input wire [ 5: 0] 		id_ext_int_i,
-	output wire [ 5: 0]		id_intr_o,
-
  	//for branch	
  	output wire 			id_branch_en_o,
  	output wire [31: 0]		id_branch_pc_o,
@@ -49,6 +45,7 @@ module decoder
  	output wire [31: 0]		id_rtvalue_o,
  	output wire [`ExcE] 	id_excs_o,
 	output wire 			id_has_exc_o,
+	output wire 			id_ov_inst_o,//current inst could cause an ov exception
 
  	output wire [`AOP] 		id_aluop_o,
  	output wire [`MDOP] 	id_mduop_o,
@@ -60,7 +57,6 @@ module decoder
     output wire          	id_c0wen_o,
     output wire          	id_c0ren_o,
     output wire [ 7: 0]  	id_c0addr_o,
-
 
  	output wire 			id_stallreq_o
 );
@@ -81,6 +77,7 @@ module decoder
  	wire [31: 0]  		id_rtvalue_next;
  	wire [`ExcE] 		id_excs_next;
 	wire 				id_has_exc_next;
+	wire 				id_ov_inst_next;
  	wire [`AOP] 		id_aluop_next;
  	wire [`MDOP] 		id_mduop_next;
  	wire 				id_mduinst_next;
@@ -263,7 +260,7 @@ module decoder
 						| inst_break  | inst_syscall;
 
 
-	assign id_excs_next[0] = |id_ext_int_i;
+	assign id_excs_next[0] = 0;
 	assign id_excs_next[1] = id_excs_i[1];
 	assign id_excs_next[2] = id_excs_i[2];
 	assign id_excs_next[3] = id_excs_i[3];
@@ -272,7 +269,8 @@ module decoder
 	assign id_excs_next[6] = inst_break;
 	assign id_excs_next[7] = ~inst_valid;
 	assign id_excs_next[8] = inst_eret;
-	assign id_has_exc_next = id_has_exc_i | id_excs_next[0] | id_excs_next[8] | id_excs_next[5] | id_excs_next[6] | id_excs_next[7];
+	assign id_has_exc_next = id_has_exc_i | id_excs_next[8] | id_excs_next[5] | id_excs_next[6] | id_excs_next[7];
+	assign id_ov_inst_next = inst_add | inst_addi | inst_sub;
 
     decoder_6_64 u_dec0(.in(opcode), .out(op_d	 ));
     decoder_6_64 u_dec1(.in(funct) , .out(func_d ));
@@ -353,7 +351,7 @@ module decoder
 	assign inst_mfc0_0 = op_d[`OP_COP0] & rs_d[5'h00];
 	assign inst_mfc0   = inst_mfc0_0 & ((id_inst_i[10: 3] ^ 0)==0);
 	assign inst_mtc0_0 = op_d[`OP_COP0] & rs_d[5'h04];
-	assign inst_mtc0   = inst_mfc0_0 & ((id_inst_i[10: 3] ^ 0)==0);
+	assign inst_mtc0   = inst_mtc0_0 & ((id_inst_i[10: 3] ^ 0)==0);
 
 	assign inst_break_0= op_d[`OP_SPECIAL] & func_d[6'h0d];
 	assign inst_break  = inst_break_0 & ((id_inst_i[25: 6] ^ 0)==0);
@@ -424,7 +422,6 @@ module decoder
 
 
 	//to next stage
-	assign id_intr_next 	= id_ext_int_i;
 	assign id_opr1_next 	= id_flush_i 	  ? 0 : 
 							  src1_is_sa 	  ? sa_ext 	   :
 						  	  src1_is_pc 	  ? id_pc_next  :
@@ -436,7 +433,7 @@ module decoder
 						      src2_is_8   	  ? 32'd8  	   :
 						      id_reg2data_i;
 
-	assign id_waddr_next 	= id_flush_i 	  ? 0 : 
+	assign id_waddr_next 	= id_flush_i 	  	  ? 0 : 
 							  waddr_is_31 	  	  ? 5'd31 	   :
 						      waddr_is_rt	  	  ? rt 		   :
 						      rd;
@@ -469,7 +466,7 @@ module decoder
     assign id_branch_pc_o   = inst_branch_b ? b_target :
     						  inst_branch_j ? j_target :
     						  id_reg1data_i;
-    assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo ;
+    assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo | inst_mfc0;
  	wire LZ;     // Less Than Zero
     wire GEZ;    // Greater Than or Equal to Zero
     wire LEZ;    // Less Than or Equal to Zero
@@ -495,7 +492,6 @@ module decoder
 
 
 //DFFREs
-DFFRE #(.WIDTH(6))			intr_next			(.d(id_intr_next), .q(id_intr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			opr1_next			(.d(id_opr1_next), .q(id_opr1_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))			opr2_next			(.d(id_opr2_next), .q(id_opr2_o), .en(en), .clk(clk), .rst_n(rst_n));
 
@@ -525,6 +521,8 @@ DFFRE #(.WIDTH(8))			c0addr_next			(.d(id_c0addr_next), .q(id_c0addr_o), .en(en)
 DFFRE #(.WIDTH(1))			nofwd_next			(.d(id_nofwd_next), .q(id_nofwd_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`ExcE_W))	excs_next			(.d(id_excs_next), .q(id_excs_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			has_exc_next		(.d(id_has_exc_next), .q(id_has_exc_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))			ov_inst_next		(.d(id_ov_inst_next), .q(id_ov_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
+
 
 
 

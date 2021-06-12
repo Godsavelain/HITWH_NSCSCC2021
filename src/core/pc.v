@@ -48,8 +48,8 @@ wire [`ExcE] 	if_excs_next;
 assign inst_sram_wen   = 4'h0;
 assign inst_sram_wdata = 32'b0;
 // assign inst_sram_en   =!(if_stall_i||pc_flush_i) ;
-assign inst_sram_en   =!pc_flush_i;
-
+//assign inst_sram_en   =!pc_flush_i;
+assign inst_sram_en   = 1;
 assign pc_next 		=  !rst_n	? 32'hbfbffffc		:			   
 				   		// stall	? pc_next 			:
 				   		pc_flush_i	? flush_pc_i	:
@@ -67,9 +67,9 @@ assign if_inst_next 	= 	!rst_n 	? 0					:
 						inst_i
 						;
 
-assign if_has_exc_next  = (if_pc_i[1:0] == 2'b00);
+assign if_has_exc_next  = ~(if_pc_i[1:0] == 2'b00);
 assign if_excs_next[0]	= 0;
-assign if_excs_next[1]	= (if_pc_i[1:0] == 2'b00);
+assign if_excs_next[1]	= ~(if_pc_i[1:0] == 2'b00);
 assign if_excs_next[`ExcE_W-1: 2]	= 0;
 
 assign en 			= 	~ if_stall_i;
@@ -80,7 +80,7 @@ DFFRE #(.WIDTH(32))		pc_result_next			(.d(pc_next), .q(if_pc_o), .en(en), .clk(c
 DFFRE #(.WIDTH(1))		delayslot_result_next	(.d(if_inslot_next), .q(if_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		inst_result_next		(.d(if_inst_next), .q(if_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		pc_next_in				(.d(if_next_pc_o), .q(next_pc_o), .en(en), .clk(clk), .rst_n(1));
-DFFRE #(.WIDTH(1))		excs_next				(.d(if_excs_next), .q(if_excs_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(`ExcE_W))has_excs_next			(.d(if_has_exc_next), .q(if_has_exc_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(`ExcE_W))excs_next				(.d(if_excs_next), .q(if_excs_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))		has_excs_next			(.d(if_has_exc_next), .q(if_has_exc_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 endmodule

@@ -36,7 +36,7 @@ assign stall = streq_wb_i  ? 5'b11111 :
 			   streq_id_i  ? 5'b00011 :
 			   streq_pc_i  ? 5'b00001 :
 			   5'b00000;
-assign flush_wb_o  = exc_flag ? 1'b1 : stall[3] & ~stall[4];
+assign flush_wb_o  = exc_flag ? 1'b0 : stall[3] & ~stall[4];
 assign flush_mem_o = exc_flag ? 1'b1 : stall[2] & ~stall[3];
 assign flush_ex_o  = exc_flag ? 1'b1 : stall[1] & ~stall[2];
 assign flush_id_o  = exc_flag ? 1'b1 : stall[0] & ~stall[1];

@@ -6,7 +6,8 @@ module alu
 	input wire  [31: 0]			opr2,
 	input wire  [`AOP]			alu_op,
 
-	output wire [31: 0]			alu_res
+	output wire [31: 0]			alu_res,
+	output wire 				ov
 );
 
 //operations
@@ -94,6 +95,12 @@ module alu
 								|	({32{op_srl}}		   & srl_result)
 								|	({32{op_sra}}		   & sra_result)
 								|	({32{op_lui}}		   & lui_result);
+
+//overflow
+	assign 	s_opr1			= adder_a[31];
+	assign 	s_opr2			= adder_b[31];
+	assign 	s_res			= add_res[31];
+	assign  ov				= (~(s_opr1^s_opr2)) & (s_opr2 ^ s_res);
 
 
 endmodule

@@ -31,6 +31,7 @@ module mycpu_top
 //if stage signals
 wire         if_branch_en;
 wire [31: 0] branch_pc_i;
+wire [31: 0] flush_pc_i;
 wire [31: 0] if_inst_i;
 wire         if_in_delay_slot_i;
 wire [31: 0] if_pc_i;
@@ -46,6 +47,7 @@ wire [31: 0] id_reg1data_i;
 wire [31: 0] id_reg2data_i;
 wire [`ExcE] id_excs_o;
 wire         id_has_exc_o;
+wire         id_ov_inst_o;
 wire [ 5: 0] id_intr_o;
 wire         id_c0wen_o;
 wire         id_c0ren_o;
@@ -72,10 +74,13 @@ wire [`TOP]  ex_tlbop_i;
 wire [`COP]  ex_cacheop_i;
 
 wire [31: 0] ex_alures_i;
+wire         ex_aluov_i;
 wire         ex_c0wen_o;
 wire         ex_c0ren_o;
 wire [ 7: 0] ex_c0addr_o;
+wire [31: 0] ex_c0_wdata_o;
 wire         ex_has_exc_o;
+wire         ex_ov_inst_i;
 wire [`ExcE] ex_excs_o;
 wire [ 5: 0] ex_intr_o;
 //to alu
@@ -106,6 +111,7 @@ wire [31: 0] mem_inst_i;
 wire [31: 0] mem_pc_i;
 wire         mem_inslot_i;
 wire [`MMOP] mem_memop_i;
+wire [31: 0] mem_c0data_i;
 
 wire [ 4: 0] mem_waddr_i;
 wire [31: 0] mem_wdata_i;
@@ -177,17 +183,29 @@ wire         wloen;
 wire [31: 0] hilo_hi_o;
 wire [31: 0] hilo_lo_o;
 
+//exceptions
+ wire  [31: 0]  exc_EPC_i;
+ wire  [31: 0]  exc_ErrorEPC_i;//from cp0
+
+ wire           exc_intr_i;//中断信号，来自cp0
+
+ wire          exc_flag_o;//确认发生异常/中断
+ wire [`ExcT]  exc_type_o;//异常类型
+ wire [31: 0]  exc_baddr_o;
+ wire [ 1: 0]  exc_cpun_o;
+
+
 // module declaration
 pc PC
 (
   .clk                (clk                ),
   .rst_n              (resetn             ),
-  .pc_flush_i         (flush_pc_o         ),
+  .pc_flush_i         (exc_flag           ),
   .if_flush_i         (flush_id_o         ),     
   .if_stall_i         (stall_pc_o         ),     
   .branch_en          (if_branch_en       ),
 
-  .flush_pc_i         (0                  ),
+  .flush_pc_i         (flush_pc_i         ),
   .branch_pc_i        (branch_pc_i        ),
   .inst_i             (inst_sram_rdata    ),     
   .if_inslot_i        (if_in_delay_slot_i ),
@@ -222,10 +240,8 @@ decoder DECODER
   .id_reg1data_i      (id_reg1data_i      ),
   .id_reg2data_i      (id_reg2data_i      ),
 
-  .id_ext_int_i       (ext_int            ),
   .id_excs_i          (if_excs_o          ),
   .id_has_exc_i       (if_has_exc_o       ),
-  .id_intr_o          (id_intr_o          ),
 
   .id_branch_en_o     (if_branch_en       ),
   .id_branch_pc_o     (branch_pc_i        ),
@@ -253,6 +269,7 @@ decoder DECODER
   .id_rtvalue_o       (ex_rtvalue_i       ),
   .id_excs_o          (id_excs_o          ),
   .id_has_exc_o       (id_has_exc_o       ),
+  .id_ov_inst_o       (ex_ov_inst_i       ),
 
   .id_aluop_o         (ex_aluop_i         ),
   .id_mduop_o         (ex_mduop_i         ),
@@ -304,7 +321,6 @@ execute EXECUTE
 
   .ex_inst_i          (ex_inst_i          ),
   .ex_inslot_i        (ex_inslot_i        ),
-  .ex_intr_i          (id_intr_o          ),
   .ex_pc_i            (ex_pc_i            ),
   .ex_opr1_i          (ex_opr1_i          ),
   .ex_opr2_i          (ex_opr2_i          ),
@@ -317,6 +333,7 @@ execute EXECUTE
   .ex_mduinst_i       (ex_mduinst_i       ),
   .ex_excs_i          (id_excs_o          ),
   .ex_has_exc_i       (id_has_exc_o       ),
+  .ex_ov_inst_i       (ex_ov_inst_i       ),
 
   .ex_aluop_i         (ex_aluop_i         ),
   .ex_mduop_i         (ex_mduop_i         ),
@@ -325,6 +342,7 @@ execute EXECUTE
   .ex_cacheop_i       (ex_cacheop_i       ),
 
   .ex_alures_i        (ex_alures_i        ),
+  .ex_aluov_i         (ex_aluov_i         ),
 
   .ex_c0wen_i         (id_c0wen_o         ),
   .ex_c0ren_i         (id_c0ren_o         ),
@@ -362,10 +380,10 @@ execute EXECUTE
   .ex_memaddr_low_o   (mem_memaddr_low_i  ),
   .ex_excs_o          (ex_excs_o          ),
   .ex_has_exc_o       (ex_has_exc_o       ),
-  .ex_intr_o          (ex_intr_o          ),
   .ex_c0wen_o         (ex_c0wen_o         ),
   .ex_c0ren_o         (ex_c0ren_o         ),
   .ex_c0addr_o        (ex_c0addr_o        ),
+  .ex_c0_wdata_o      (ex_c0_wdata_o      ),
   .ex_mdu_inst_o      (mem_mduinst_i      ),
 
   .ex_wdata_bp_o      (ex_wdata_bp        ),
@@ -377,7 +395,8 @@ alu ALU
   .opr1               (opr1               ),
   .opr2               (opr2               ),
   .alu_op             (alu_op             ),
-  .alu_res            (ex_alures_i        )
+  .alu_res            (ex_alures_i        ),
+  .ov                 (ex_aluov_i         )
 );
 
 mdu MDU
@@ -410,11 +429,55 @@ mdu MDU
   .mdu_s2_stallreq_o  (mdu_s2_stallreq_o)
 );
 
+exception EXC
+(
+  .exc_pc_i           (mem_pc_i),//进入PC
+  .exc_mem_en_i       (data_sram_wen),//当前有写请求
+  .exc_m_addr_i       (data_sram_addr),
+  .exc_EPC_i          (exc_EPC_i),
+  .exc_ErrorEPC_i     (exc_ErrorEPC_i),//from cp0
+  .exc_excs_i         (ex_excs_o),//异常向量
+
+  .exc_intr_i         (exc_intr_i),//中断信号，来自cp0
+
+  .exc_flag_o         (exc_flag),//确认发生异常/中断
+  .exc_type_o         (exc_type_o),//异常类型
+  .exc_baddr_o        (exc_baddr_o),
+  .exc_cpun_o         (exc_cpun_o),
+  .flush_pc_o         (flush_pc_i)
+);
+
+cp0 CP0
+(
+  .clk                (clk),
+  .rst_n              (resetn),
+  .cp0_intr_i         (ext_int),//外部中断
+  .cp0_addr_i         (ex_c0addr_o),//地址
+  .cp0_ren_i          (ex_c0ren_o),//读使能
+  .cp0_wdata_i        (ex_c0_wdata_o),//写数据
+  .cp0_wen_i          (ex_c0wen_o),//写使能
+
+  .cp0_pc_i           (mem_pc_i),//异常指令对应的pc
+  .cp0_exc_flag_i     (exc_flag),//标记发生异常
+  .cp0_exc_type_i     (exc_type_o),//标记异常类型
+  .cp0_baddr_i        (exc_baddr_o),//来自Exceptions，地址异常的地址
+  .cp0_cpun_i         (), //来自Exceptions，协处理器缺失异常
+  .cp0_inslot_i       (mem_inslot_i),
+  //.cp0_issave_i       (),//当前指令写内存，来自MEM
+
+  .cp0_rdata_o        (mem_c0data_i),//读出数据
+  .Status_o           (),
+  .Cause_o            (),
+  .EPC_o              (exc_EPC_i),
+  .Config_o           (),
+  .ErrorEPC_o         (),
+  .exc_intr           (exc_intr_i)//标记产生中断
+);
+
 mem MEM
 (
   .clk                (clk),
   .rst_n              (resetn),
-  .mem_excs_i         (ex_excs_o),
 
   .mem_memdata_i      (data_sram_rdata),  
 
@@ -426,6 +489,8 @@ mem MEM
 
   .mem_waddr_i        (mem_waddr_i),
   .mem_wdata_i        (mem_wdata_i),
+  .mem_c0_ren_i       (ex_c0ren_o),
+  .mem_c0data_i       (mem_c0data_i),
   .mem_wren_i         (mem_wren_i),
   .mem_nofwd_i        (mem_nofwd_i),
   .mem_inst_load_i    (mem_inst_load_i),
@@ -500,7 +565,7 @@ control control
   .streq_ex_i         (streq_ex_i),
   .streq_mem_i        (streq_mem_i),
   .streq_wb_i         (streq_wb_i),
-  .exc_flag           (0),
+  .exc_flag           (exc_flag),
 
   .stall_pc_o         (stall_pc_o),
   .stall_id_o         (stall_id_o),
