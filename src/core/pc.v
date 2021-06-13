@@ -67,9 +67,9 @@ assign if_inst_next 	= 	!rst_n 	? 0					:
 						inst_i
 						;
 
-assign if_has_exc_next  = ~(if_pc_i[1:0] == 2'b00);
+assign if_has_exc_next  = if_flush_i ? 0 : ~(if_pc_i[1:0] == 2'b00);
 assign if_excs_next[0]	= 0;
-assign if_excs_next[1]	= ~(if_pc_i[1:0] == 2'b00);
+assign if_excs_next[1]	= if_flush_i ? 0 : ~(if_pc_i[1:0] == 2'b00);
 assign if_excs_next[`ExcE_W-1: 2]	= 0;
 
 assign en 			= 	~ if_stall_i;

@@ -95,7 +95,7 @@ wire [31: 0]  mdu_wlo_in;
 wire [31: 0]  mdu_opr1_i;
 wire [31: 0]  mdu_opr2_i;
 
-
+wire [31: 0]  ex_bad_memaddr_o;
 wire          hi_wen;
 wire [31: 0]  hi_o;
 wire          lo_wen;
@@ -371,6 +371,7 @@ execute EXECUTE
   .ex_memwen_o        (data_sram_wen      ),   
   .ex_memaddr_o       (data_sram_addr     ), 
   .ex_memwdata_o      (data_sram_wdata    ), 
+  .ex_bad_memaddr_o   (ex_bad_memaddr_o   ), 
 
   .ex_inst_o          (mem_inst_i         ),
   .ex_inslot_o        (mem_inslot_i       ),
@@ -433,7 +434,7 @@ exception EXC
 (
   .exc_pc_i           (mem_pc_i),//进入PC
   .exc_mem_en_i       (data_sram_wen),//当前有写请求
-  .exc_m_addr_i       (data_sram_addr),
+  .exc_m_addr_i       (ex_bad_memaddr_o),
   .exc_EPC_i          (exc_EPC_i),
   .exc_ErrorEPC_i     (exc_ErrorEPC_i),//from cp0
   .exc_excs_i         (ex_excs_o),//异常向量

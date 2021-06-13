@@ -26,7 +26,7 @@ module cp0
 	output wire  [31: 0] EPC_o,
 	output wire  [31: 0] Config_o,
 	output wire  [31: 0] ErrorEPC_o,
-	output wire 		exc_intr//标记产生中断
+	output wire 		 exc_intr//标记产生中断
 );
 
     // Count & Compare
@@ -241,8 +241,10 @@ module cp0
                     end
                 endcase
 
-                // case (cp0_exc_type_i)
-                //     `ExcT_AdE: BadVAddr <= exc_baddr;
+                 case (cp0_exc_type_i)
+                     `ExcT_AdEL1,
+                     `ExcT_AdEL2,
+                     `ExcT_AdES: BadVAddr <= cp0_baddr_i;
 
                 //     `ExcT_TLBR,
                 //     `ExcT_TLBI,
@@ -253,7 +255,7 @@ module cp0
                 //     end
 
                 //     `ExcT_CpU: Cause_CE <= exc_cpun;
-                // endcase
+              endcase
 
                 // ExcCode
                 case (cp0_exc_type_i)//异常码

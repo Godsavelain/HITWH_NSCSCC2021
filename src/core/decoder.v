@@ -261,16 +261,16 @@ module decoder
 
 
 	assign id_excs_next[0] = 0;
-	assign id_excs_next[1] = id_excs_i[1];
-	assign id_excs_next[2] = id_excs_i[2];
-	assign id_excs_next[3] = id_excs_i[3];
-	assign id_excs_next[4] = id_excs_i[4];
-	assign id_excs_next[5] = inst_syscall;
-	assign id_excs_next[6] = inst_break;
-	assign id_excs_next[7] = ~inst_valid;
-	assign id_excs_next[8] = inst_eret;
-	assign id_has_exc_next = id_has_exc_i | id_excs_next[8] | id_excs_next[5] | id_excs_next[6] | id_excs_next[7];
-	assign id_ov_inst_next = inst_add | inst_addi | inst_sub;
+	assign id_excs_next[1] =  id_flush_i ? 0 : id_excs_i[1];
+	assign id_excs_next[2] =  id_flush_i ? 0 : id_excs_i[2];
+	assign id_excs_next[3] =  id_flush_i ? 0 : id_excs_i[3];
+	assign id_excs_next[4] =  id_flush_i ? 0 : id_excs_i[4];
+	assign id_excs_next[5] =  id_flush_i ? 0 : inst_syscall;
+	assign id_excs_next[6] =  id_flush_i ? 0 : inst_break;
+	assign id_excs_next[7] =  id_flush_i ? 0 : ~inst_valid;
+	assign id_excs_next[8] =  id_flush_i ? 0 : inst_eret;
+	assign id_has_exc_next =  id_flush_i ? 0 : id_has_exc_i | id_excs_next[8] | id_excs_next[5] | id_excs_next[6] | id_excs_next[7];
+	assign id_ov_inst_next =  id_flush_i ? 0 : inst_add | inst_addi | inst_sub;
 
     decoder_6_64 u_dec0(.in(opcode), .out(op_d	 ));
     decoder_6_64 u_dec1(.in(funct) , .out(func_d ));

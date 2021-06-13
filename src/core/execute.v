@@ -66,6 +66,8 @@ module execute
 	output wire [31: 0] 	ex_memaddr_o,	//data_sram_addr
     output wire [31: 0] 	ex_memwdata_o,	//data_sram_wdata
 
+    output wire [31: 0] 	ex_bad_memaddr_o,	//for adress exception
+
     output wire [31: 0]		ex_inst_o,
     output wire 			ex_inslot_o,
  	output wire 			ex_stallreq_o,
@@ -107,7 +109,8 @@ module execute
   	wire          			ex_c0wen_next;
     wire          			ex_c0ren_next;
     wire 		[ 7: 0]  	ex_c0addr_next;  
-    wire 		[31: 0]  	ex_c0_wdata_next;  
+    wire 		[31: 0]  	ex_c0_wdata_next;
+    wire 		[31: 0]		ex_bad_memaddr_next;  
 
 //useful values
 		
@@ -173,9 +176,9 @@ module execute
 	assign ex_excs_next[`ExcE_W-1: 5]	= ex_flush_i ? 0 : ex_excs_i[`ExcE_W-1: 5];
 	assign ex_excs_next[4] 	= ex_flush_i ? 0 : ov;
 	assign ex_excs_next[3] 	= ex_flush_i ? 0 : (ex_memaddr_low[0] & op_sh) | ((ex_memaddr_low[1:0] != 00) & op_sw);
-	assign ex_excs_next[2] 	= ex_flush_i ? 0 : (ex_memaddr_low[0] &(op_lh & op_lhu)) | ((ex_memaddr_low[1:0] != 00) & op_lw);;
+	assign ex_excs_next[2] 	= ex_flush_i ? 0 : (ex_memaddr_low[0] &(op_lh | op_lhu)) | ((ex_memaddr_low[1:0] != 00) & op_lw);;
 	assign ex_excs_next[ 1: 0] 	= ex_flush_i ? 0 : ex_excs_i[ 1: 0];
- 	assign ex_has_exc_next	= ex_flush_i ? 0 :ex_has_exc_i | ov ; 
+ 	assign ex_has_exc_next	= ex_flush_i ? 0 :ex_has_exc_i | ov | ex_excs_next[3] | ex_excs_next[2]; 
    	assign ex_c0wen_next	= ex_flush_i ? 0 : ex_c0wen_i;
     assign ex_c0ren_next	= ex_flush_i ? 0 : ex_c0ren_i;
     assign ex_c0addr_next	= ex_flush_i ? 0 : ex_c0addr_i;
@@ -220,7 +223,7 @@ module execute
 							  ex_memaddr_low == 2'b01 ? {{ex_rtvalue_i[23: 0]} , 8'b0}:
 							  ex_memaddr_low == 2'b10 ? {2{ex_rtvalue_i[15: 0]}} 	 :
 							  {4{ex_rtvalue_i[ 7: 0]}};
-	assign ex_memen_o 		= ex_flush_i ? 0 : (|ex_memop_i) & (~ex_has_exc_i);	    //使能
+	assign ex_memen_o 		= ex_flush_i ? 0 : (|ex_memop_i) & (~ex_has_exc_next);	    //使能
 	assign ex_memwen_o 		= op_sb ? ex_memwen_sb :
 							  op_sh ? ex_memwen_sh :
 							  op_sw ? 4'b1111	   :
@@ -228,6 +231,7 @@ module execute
 							  op_swr? ex_memwen_swr:
 							  4'b0000; 	    			//写使能	
 	assign ex_memaddr_o 	= {ex_alures_i[31:2],2'b00};		//data_sram_addr  访存地址通过alu计算
+	assign ex_bad_memaddr_next = ex_alures_i;
 	assign ex_memwdata_o 	= op_sb ? {4{ex_rtvalue_i[7:0]}} :
 							  op_sh ? {2{ex_rtvalue_i[15:0]}}:
 							  op_swl? swl_data				 :
@@ -258,6 +262,7 @@ DFFRE #(.WIDTH(1))		c0wen_next			(.d(ex_c0wen_next), .q(ex_c0wen_o), .en(en), .c
 DFFRE #(.WIDTH(1))		c0ren_next			(.d(ex_c0ren_next), .q(ex_c0ren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		c0data_next			(.d(ex_c0_wdata_next), .q(ex_c0_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(8))		c0addr_next			(.d(ex_c0addr_next), .q(ex_c0addr_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(32))		badvaddr_next		(.d(ex_bad_memaddr_next), .q(ex_bad_memaddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 //除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指令
