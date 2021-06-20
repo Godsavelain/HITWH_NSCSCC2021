@@ -66,6 +66,7 @@ wire         ex_divinst_i;
 wire         ex_mduinst_i;
 wire [31: 0] ex_offset_i;
 wire         ex_nofwd_i;
+wire         ex_storeinst_o;
 
 wire [`AOP]  ex_aluop_i;
 wire [`MDOP] ex_mduop_i;
@@ -370,7 +371,8 @@ execute EXECUTE
   .ex_memen_o         (data_sram_en       ),   
   .ex_memwen_o        (data_sram_wen      ),   
   .ex_memaddr_o       (data_sram_addr     ), 
-  .ex_memwdata_o      (data_sram_wdata    ), 
+  .ex_memwdata_o      (data_sram_wdata    ),
+  .ex_storeinst_o     (ex_storeinst_o     ), 
   .ex_bad_memaddr_o   (ex_bad_memaddr_o   ), 
 
   .ex_inst_o          (mem_inst_i         ),
@@ -433,7 +435,7 @@ mdu MDU
 exception EXC
 (
   .exc_pc_i           (mem_pc_i),//进入PC
-  .exc_mem_en_i       (data_sram_wen),//当前有写请求
+  .exc_mem_en_i       (ex_storeinst_o),//当前有写请求
   .exc_m_addr_i       (ex_bad_memaddr_o),
   .exc_EPC_i          (exc_EPC_i),
   .exc_ErrorEPC_i     (exc_ErrorEPC_i),//from cp0

@@ -49,7 +49,6 @@ module execute
 
     //to alu
     output wire [`AOP] 		ex_aluop_o,
-    output wire [`MMOP] 	ex_memop_o,
     output wire [31: 0]		ex_opr1_o,
  	output wire [31: 0]		ex_opr2_o,
 
@@ -65,7 +64,9 @@ module execute
 	output wire [ 3: 0]		ex_memwen_o,	//data_sram_wen	
 	output wire [31: 0] 	ex_memaddr_o,	//data_sram_addr
     output wire [31: 0] 	ex_memwdata_o,	//data_sram_wdata
+    output wire 			ex_storeinst_o, //could cause store
 
+    output wire [`MMOP] 	ex_memop_o,
     output wire [31: 0] 	ex_bad_memaddr_o,	//for adress exception
 
     output wire [31: 0]		ex_inst_o,
@@ -230,6 +231,8 @@ module execute
 							  op_swl? ex_memwen_swl:
 							  op_swr? ex_memwen_swr:
 							  4'b0000; 	    			//写使能	
+	assign ex_storeinst_o   = op_sb | op_sh | op_sw | op_swl | op_swr ;
+
 	assign ex_memaddr_o 	= {ex_alures_i[31:2],2'b00};		//data_sram_addr  访存地址通过alu计算
 	assign ex_bad_memaddr_next = ex_alures_i;
 	assign ex_memwdata_o 	= op_sb ? {4{ex_rtvalue_i[7:0]}} :
@@ -237,6 +240,7 @@ module execute
 							  op_swl? swl_data				 :
 							  op_swr? swr_data				 :
 							  ex_rtvalue_i;   	//data_sram_wdata
+
 
 //to mdu
 	assign ex_mdu_opr1_o	= ex_opr1_i;
