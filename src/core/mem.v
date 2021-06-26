@@ -20,7 +20,6 @@ module mem
 	input wire [ 3: 0]	mem_wren_i,
 	input wire			mem_nofwd_i,
 	input wire 			mem_inst_load_i,
-	input wire 			mem_mduinst_i,
 
 	input wire 			mem_stall_i,
 	input wire 			mem_flush_i,
@@ -36,7 +35,6 @@ module mem
 	output wire [31: 0]	mem_wdata_o,
 	output wire [ 3: 0]	mem_wren_o,
 	output wire [31: 0] mem_pc_o,
-	output wire 		mem_mduinst_o,
 	//for bypass
 	output wire [31: 0] mem_wdata_bp,
 	output wire 		mem_nofwd_bp,

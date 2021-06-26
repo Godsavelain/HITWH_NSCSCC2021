@@ -82,7 +82,6 @@ module execute
     output wire [ 7: 0]  	ex_c0addr_o,
     output wire [31: 0]		ex_c0_wdata_o,
 
- 	output wire 			ex_mdu_inst_o,
 
  	//bypass 
  	output wire	[31: 0]		ex_wdata_bp_o,
@@ -261,7 +260,6 @@ DFFRE #(.WIDTH(1))		inst_load_next		(.d(ex_inst_load_next), .q(ex_inst_load_o), 
 DFFRE #(.WIDTH(2))		memaddr_low_next	(.d(ex_memaddr_low_next), .q(ex_memaddr_low_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(`ExcE_W))excs_next			(.d(ex_excs_next), .q(ex_excs_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		has_exc_next		(.d(ex_has_exc_next), .q(ex_has_exc_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(6))		intr_next			(.d(ex_intr_next), .q(ex_intr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		c0wen_next			(.d(ex_c0wen_next), .q(ex_c0wen_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		c0ren_next			(.d(ex_c0ren_next), .q(ex_c0ren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		c0data_next			(.d(ex_c0_wdata_next), .q(ex_c0_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));

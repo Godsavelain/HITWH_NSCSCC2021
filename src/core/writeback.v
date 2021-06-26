@@ -12,7 +12,6 @@ module writeback
 	input wire [ 4: 0]		wb_waddr_i,
 	input wire [31: 0]		wb_wdata_i,
 	input wire [31: 0]		wb_inst_i,
-	input wire 				wb_mduinst_i,
 
 	input wire [31: 0]		wb_pc_i,
 

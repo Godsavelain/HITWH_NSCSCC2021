@@ -497,7 +497,6 @@ mem MEM
   .mem_wren_i         (mem_wren_i),
   .mem_nofwd_i        (mem_nofwd_i),
   .mem_inst_load_i    (mem_inst_load_i),
-  .mem_mduinst_i      (mem_mduinst_i),
 
   .mem_stall_i        (stall_mem_o),
   .mem_flush_i        (flush_wb_o ),  
@@ -510,7 +509,6 @@ mem MEM
   .mem_wdata_o        (wb_wdata_i),
   .mem_wren_o         (wb_wren_i),
   .mem_pc_o           (wb_pc_i),
-  .mem_mduinst_o      (wb_mduinst_i),
 
   .mem_wdata_bp       (mem_wdata_bp),
   .mem_nofwd_bp       (rf_mem_nofwd),
@@ -531,7 +529,6 @@ writeback WRITEBACK
   .wb_waddr_i         (wb_waddr_i),
   .wb_wdata_i         (wb_wdata_i),
   .wb_inst_i          (wb_inst_i),
-  .wb_mduinst_i       (wb_mduinst_i),
 
   .wb_pc_i            (wb_pc_i),
 
