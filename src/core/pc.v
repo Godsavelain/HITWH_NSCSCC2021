@@ -50,6 +50,7 @@ reg [31: 0] branch_pc_reg;
 reg 		use_branch_pc_reg;
 reg [31: 0] exc_pc_reg;
 reg 		use_exc_pc_reg;
+reg 		in_delay_slot;
 
 
 assign pre_in_en 		= (!rst_n) | branch_en | pc_flush_i	| icache_ask ? 1 : 
@@ -90,7 +91,7 @@ assign if_excs_next[`ExcE_W-1: 2]	= 0;
 
 assign en 			= 	~ if_stall_i;
 
-assign if_inslot_next = ( if_flush_i | use_exc_pc_reg ) ? 0 :if_inslot_i;
+assign if_inslot_next = ( if_flush_i | use_exc_pc_reg ) ? 0 : in_delay_slot;
 
 
 DFFRE #(.WIDTH(32))		pc_result_next			(.d(pc_next), .q(if_pc_o), .en(en), .clk(clk), .rst_n(1));
@@ -124,6 +125,18 @@ always @(posedge clk, negedge rst_n) begin
         	begin
         		exc_pc_reg <= flush_pc_i;
 				use_exc_pc_reg <= 1;
+        	end
+        end
+    end
+
+always @(posedge clk, negedge rst_n) begin
+        if(!rst_n | !icache_stall) begin
+            in_delay_slot <= 0;					
+        end
+        else begin
+        	if((if_inslot_i & icache_stall)&(~if_stall_i))
+        	begin
+				in_delay_slot <= 1;
         	end
         end
     end
