@@ -37,7 +37,8 @@ module exception
     assign  exc_baddr_o = excs[`Exc_AdEL1] ? exc_pc_i :
                           excs[`Exc_AdEL2] | excs[`Exc_AdES] ? exc_m_addr_i : 0;
 
-    assign  flush_pc_o  = excs[`Exc_ERET  ] ? exc_EPC_i-4 :32'hBFC0_037c;
+    //assign  flush_pc_o  = excs[`Exc_ERET  ] ? exc_EPC_i-4 :32'hBFC0_037c;
+    assign  flush_pc_o  = excs[`Exc_ERET  ] ? exc_EPC_i  :32'hBFC0_0380;
 
 
 

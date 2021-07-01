@@ -4,7 +4,7 @@ module mdu
 (
 	input wire 			clk,
 	input wire 			rst_n,
-	input wire [`MMOP] 	mduop_i,
+	input wire [`MDOP] 	mduop_i,
 	input wire 			mdu_s1_stall_i,
 	input wire 			mdu_s1_flush_i,
 	input wire 			mdu_s2_stall_i,

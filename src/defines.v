@@ -343,3 +343,9 @@
 `define         ExcC_CpU            5'h0B
 `define         ExcC_Ov             5'h0C
 `define         ExcC_Tr             5'h0D
+
+//cache
+`define         ICACHE_STATS_W     4
+`define         DCACHE_STATS_W     8
+`define         ICACHE_STATS      `ICACHE_STATS_W-1 :0
+`define         DCACHE_STATS      `DCACHE_STATS_W-1 :0

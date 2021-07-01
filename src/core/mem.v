@@ -149,7 +149,7 @@ module mem
 								  					mem_wren_i;
 	assign  mem_memop_next		= mem_flush_i ? 0 :mem_memop_i;
 	assign  mem_pc_next			= mem_flush_i ? 0 :mem_pc_i;
-	assign  mem_mduinst_next	= mem_mduinst_i;
+
 
 //for bypass
 

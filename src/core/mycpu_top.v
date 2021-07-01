@@ -1,24 +1,31 @@
 `include "../defines.v"
 
-module mycpu_top
+module mycpu_core_top
 (
   input wire                clk,
   input wire                resetn,
   input wire  [ 5: 0]       ext_int,
 
-  //to/from instmem
-  output wire                inst_sram_en,
-  output wire [ 3: 0]        inst_sram_wen,
-  output wire [31: 0]        inst_sram_addr,
-  output wire [31: 0]        inst_sram_wdata,
-  input  wire [31: 0]        inst_sram_rdata,
+  input wire                 icache_stall,
+  input wire                 dcache_stall,
+  input wire                 icache_ask,
+  output wire                ibus_stall,
+  //output wire                dbus_stall,
 
-  //to/from datamem
-  output wire                data_sram_en,
-  output wire [ 3: 0]        data_sram_wen,
-  output wire [31: 0]        data_sram_addr,
-  output wire [31: 0]        data_sram_wdata,
-  input  wire [31: 0]        data_sram_rdata,
+  //to/from icache
+  output wire                icache_bus_en,
+  output wire [ 3: 0]        icache_bus_wen,
+  output wire [31: 0]        icache_bus_addr,
+  output wire [31: 0]        icache_bus_wdata,
+  input  wire [31: 0]        icache_bus_rdata, 
+
+  //to/from dcache
+  output wire                dcache_bus_en,
+  output wire [ 3: 0]        dcache_bus_wen,
+  output wire [31: 0]        dcache_bus_addr,
+  output wire [31: 0]        dcache_bus_wdata,
+  input  wire [31: 0]        dcache_bus_rdata,
+  output wire [ 1: 0]        dcache_bus_size,
 
   //debug
   output wire [31: 0]        debug_wb_pc,
@@ -37,6 +44,7 @@ wire         if_in_delay_slot_i;
 wire [31: 0] if_pc_i;
 wire [`ExcE] if_excs_o;
 wire         if_has_exc_o;
+wire [31: 0] if_bus_vaddr;
 
 //id stage signals
 wire [31: 0] id_pc_i;
@@ -80,10 +88,10 @@ wire         ex_c0wen_o;
 wire         ex_c0ren_o;
 wire [ 7: 0] ex_c0addr_o;
 wire [31: 0] ex_c0_wdata_o;
-wire         ex_has_exc_o;
 wire         ex_ov_inst_i;
 wire [`ExcE] ex_excs_o;
 wire [ 5: 0] ex_intr_o;
+wire [31: 0] ex_bus_vaddr;
 //to alu
 wire [31: 0] opr1;
 wire [31: 0] opr2;
@@ -117,7 +125,6 @@ wire [31: 0] mem_c0data_i;
 wire [ 4: 0] mem_waddr_i;
 wire [31: 0] mem_wdata_i;
 wire [ 3: 0] mem_wren_i;
-wire         mem_mduinst_i;
 
 //writeback stage signals
 wire [`MMOP] wb_memop_i;
@@ -164,6 +171,7 @@ wire        streq_wb_i;
 wire        exc_flag;
 
 wire        stall_pc_o;
+//wire        stall_pre_pc_o;
 wire        stall_id_o;
 wire        stall_ex_o;
 wire        stall_mem_o;
@@ -203,26 +211,35 @@ pc PC
   .rst_n              (resetn             ),
   .pc_flush_i         (exc_flag           ),
   .if_flush_i         (flush_id_o         ),     
-  .if_stall_i         (stall_pc_o         ),     
+  .if_stall_i         (stall_pc_o         ), 
+  .icache_ask         (icache_ask         ), 
+  .icache_stall       (icache_stall       ),   
   .branch_en          (if_branch_en       ),
 
   .flush_pc_i         (flush_pc_i         ),
   .branch_pc_i        (branch_pc_i        ),
-  .inst_i             (inst_sram_rdata    ),     
+  .inst_i             (icache_bus_rdata    ),     
   .if_inslot_i        (if_in_delay_slot_i ),
   .if_pc_i            (if_pc_i            ),
 
-  .inst_sram_en       (inst_sram_en       ),  
+  .inst_sram_en       (icache_bus_en       ),  
   .if_pc_o            (id_pc_i            ),    
-  .if_next_pc_o       (inst_sram_addr     ), 
+  .if_next_pc_o       (if_bus_vaddr        ), 
   .if_inst_o          (id_inst_i          ),    
   .if_inslot_o        (id_inslot_i        ),
   .if_excs_o          (if_excs_o          ),
   .if_has_exc_o       (if_has_exc_o       ),
   .next_pc_o          (if_pc_i            ),
 
-  .inst_sram_wen      (inst_sram_wen      ),
-  .inst_sram_wdata    (inst_sram_wdata    )
+  .inst_sram_wen      (icache_bus_wen      ),
+  .inst_sram_wdata    (icache_bus_wdata    )
+);
+
+mmu IMMU
+(
+  .en       (icache_bus_en),
+  .vaddr    (if_bus_vaddr),
+  .paddr    (icache_bus_addr)
 );
 
 decoder DECODER
@@ -368,10 +385,11 @@ execute EXECUTE
   .ex_mdu_whi_o       (mdu_whi_in),
   .ex_mdu_wlo_o       (mdu_wlo_in),
 
-  .ex_memen_o         (data_sram_en       ),   
-  .ex_memwen_o        (data_sram_wen      ),   
-  .ex_memaddr_o       (data_sram_addr     ), 
-  .ex_memwdata_o      (data_sram_wdata    ),
+  .ex_memen_o         (dcache_bus_en       ),   
+  .ex_memwen_o        (dcache_bus_wen      ),   
+  .ex_memaddr_o       (ex_bus_vaddr        ), 
+  .ex_memwdata_o      (dcache_bus_wdata    ),
+  .ex_bus_size        (dcache_bus_size     ),
   .ex_storeinst_o     (ex_storeinst_o     ), 
   .ex_bad_memaddr_o   (ex_bad_memaddr_o   ), 
 
@@ -382,15 +400,20 @@ execute EXECUTE
   .ex_inst_load_o     (mem_inst_load_i    ),
   .ex_memaddr_low_o   (mem_memaddr_low_i  ),
   .ex_excs_o          (ex_excs_o          ),
-  .ex_has_exc_o       (ex_has_exc_o       ),
   .ex_c0wen_o         (ex_c0wen_o         ),
   .ex_c0ren_o         (ex_c0ren_o         ),
   .ex_c0addr_o        (ex_c0addr_o        ),
   .ex_c0_wdata_o      (ex_c0_wdata_o      ),
-  .ex_mdu_inst_o      (mem_mduinst_i      ),
 
   .ex_wdata_bp_o      (ex_wdata_bp        ),
   .ex_nofwd_bp_o      (rf_ex_nofwd        )
+);
+
+mmu DMMU
+(
+  .en       (dcache_bus_en),
+  .vaddr    (ex_bus_vaddr),
+  .paddr    (dcache_bus_addr)
 );
 
 alu ALU
@@ -456,15 +479,15 @@ cp0 CP0
   .rst_n              (resetn),
   .cp0_intr_i         (ext_int),//外部中断
   .cp0_addr_i         (ex_c0addr_o),//地址
-  .cp0_ren_i          (ex_c0ren_o),//读使能
-  .cp0_wdata_i        (ex_c0_wdata_o),//写数据
-  .cp0_wen_i          (ex_c0wen_o),//写使能
+  .cp0_ren_i          (ex_c0ren_o),//读使�?
+  .cp0_wdata_i        (ex_c0_wdata_o),//写数�?
+  .cp0_wen_i          (ex_c0wen_o),//写使�?
 
   .cp0_pc_i           (mem_pc_i),//异常指令对应的pc
   .cp0_exc_flag_i     (exc_flag),//标记发生异常
   .cp0_exc_type_i     (exc_type_o),//标记异常类型
-  .cp0_baddr_i        (exc_baddr_o),//来自Exceptions，地址异常的地址
-  .cp0_cpun_i         (), //来自Exceptions，协处理器缺失异常
+  .cp0_baddr_i        (exc_baddr_o),//来自Exceptions，地�?异常的地�?
+  .cp0_cpun_i         (), //来自Exceptions，协处理器缺失异�?
   .cp0_inslot_i       (mem_inslot_i),
   //.cp0_issave_i       (),//当前指令写内存，来自MEM
 
@@ -482,7 +505,7 @@ mem MEM
   .clk                (clk),
   .rst_n              (resetn),
 
-  .mem_memdata_i      (data_sram_rdata),  
+  .mem_memdata_i      (dcache_bus_rdata),  
 
   .mem_inst_i         (mem_inst_i),
   .mem_pc_i           (mem_pc_i),
@@ -560,12 +583,13 @@ writeback WRITEBACK
 
 control control
 (
-  .streq_pc_i         (0),
+  .streq_pc_i         (icache_stall),
   .streq_id_i         (streq_id_i),
   .streq_ex_i         (streq_ex_i),
   .streq_mem_i        (streq_mem_i),
   .streq_wb_i         (streq_wb_i),
   .exc_flag           (exc_flag),
+  .dcache_stall       (dcache_stall),
 
   .stall_pc_o         (stall_pc_o),
   .stall_id_o         (stall_id_o),
@@ -580,6 +604,10 @@ control control
   .flush_wb_o         (flush_wb_o)
 
 );
+
+assign  ibus_stall = stall_pc_o;
+// assign  ibus_stall = dcache_stall;
+//assign  dbus_stall = stall_ex_o;
 
 hilo HILO
 (

@@ -211,7 +211,8 @@ module decoder
 	wire        inst_syscall;
 	wire        inst_syscall_0;
 
-    assign id_inst 		= if_flush_i ? 0 : id_inst_i;
+    //assign id_inst 		= if_flush_i ? 0 : id_inst_i;
+    assign id_inst 		= id_inst_i;
 
     assign opcode    	= id_inst[31:26];
     assign rs        	= id_inst[25:21];
@@ -433,7 +434,7 @@ module decoder
 						      src2_is_8   	  ? 32'd8  	   :
 						      id_reg2data_i;
 
-	assign id_waddr_next 	= id_flush_i 	  	  ? 0 : 
+	assign id_waddr_next 	= id_flush_i 	  	  ? 0 		   : 
 							  waddr_is_31 	  	  ? 5'd31 	   :
 						      waddr_is_rt	  	  ? rt 		   :
 						      rd;

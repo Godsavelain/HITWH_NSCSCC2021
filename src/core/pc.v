@@ -7,6 +7,8 @@ module pc
 	input wire 				if_flush_i,			//from controller
 	input wire 				pc_flush_i,
 	input wire				if_stall_i,			//from controller
+	input wire 				icache_ask,//icache 在此周期注册地址
+	input wire 				icache_stall,//icache 在等待数据
 	//input wire				usrmode,
 	input wire				branch_en,
 	input wire [31: 0]		if_pc_i,
@@ -39,48 +41,93 @@ wire [31:0] 	pc_next;
 wire [31: 0]	if_inst_next;
 wire 			if_has_exc_next;
 wire 			en;
+wire 			pre_in_en;
 //wire[31:0] 	inst_next;
 wire 			if_inslot_next;
 wire [`ExcE] 	if_excs_next;
 
+reg [31: 0] branch_pc_reg;
+reg 		use_branch_pc_reg;
+reg [31: 0] exc_pc_reg;
+reg 		use_exc_pc_reg;
 
+
+assign pre_in_en 		= (!rst_n) | branch_en | pc_flush_i	| icache_ask ? 1 : 
+					  icache_stall | if_stall_i ? 0 :1;
 
 assign inst_sram_wen   = 4'h0;
 assign inst_sram_wdata = 32'b0;
-// assign inst_sram_en   =!(if_stall_i||pc_flush_i) ;
+//assign inst_sram_en   =!(if_stall_i||pc_flush_i) ;
 //assign inst_sram_en   =!pc_flush_i;
-assign inst_sram_en   = 1;
+assign inst_sram_en   = !if_stall_i;
 assign pc_next 		=  !rst_n	? 32'hbfbffffc		:			   
 				   		// stall	? pc_next 			:
-				   		pc_flush_i	? flush_pc_i	:
+				   		//pc_flush_i	? flush_pc_i	:
 				   		if_pc_i;
-				   		;
+				   		
 
-assign if_next_pc_o =  	if_stall_i? pc_next		:
-						branch_en? branch_pc_i		:						
+assign if_next_pc_o =  	//!rst_n	? 32'hbfc00000:
+						!rst_n	? 32'hbfbffffc		:
+						icache_stall ? if_pc_i		:
+						(branch_en & !icache_stall) ? branch_pc_i		:
+						(pc_flush_i & !icache_stall) ? flush_pc_i		:
+						use_exc_pc_reg ? exc_pc_reg :
+						use_branch_pc_reg ? branch_pc_reg :
+						//pre_in_en 	  ? if_pc_i + 4 :						
 				   		pc_next + 4
 				   		;
 
-assign if_inst_next 	= 	!rst_n 	? 0					:
+assign if_inst_next 	= !rst_n 	? 0					:
 						// stall	? inst_next 		:
-						if_flush_i 	? 0					:
+						( if_flush_i | use_exc_pc_reg )	? 0					:
 						inst_i
 						;
 
-assign if_has_exc_next  = if_flush_i ? 0 : ~(if_pc_i[1:0] == 2'b00);
+assign if_has_exc_next  = ( if_flush_i | use_exc_pc_reg ) ? 0 : ~(if_pc_i[1:0] == 2'b00);
 assign if_excs_next[0]	= 0;
-assign if_excs_next[1]	= if_flush_i ? 0 : ~(if_pc_i[1:0] == 2'b00);
+assign if_excs_next[1]	= ( if_flush_i | use_exc_pc_reg ) ? 0 : ~(if_pc_i[1:0] == 2'b00);
 assign if_excs_next[`ExcE_W-1: 2]	= 0;
 
 assign en 			= 	~ if_stall_i;
 
-assign if_inslot_next = if_flush_i ? 0 :if_inslot_i;
+assign if_inslot_next = ( if_flush_i | use_exc_pc_reg ) ? 0 :if_inslot_i;
+
 
 DFFRE #(.WIDTH(32))		pc_result_next			(.d(pc_next), .q(if_pc_o), .en(en), .clk(clk), .rst_n(1));
 DFFRE #(.WIDTH(1))		delayslot_result_next	(.d(if_inslot_next), .q(if_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		inst_result_next		(.d(if_inst_next), .q(if_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(32))		pc_next_in				(.d(if_next_pc_o), .q(next_pc_o), .en(en), .clk(clk), .rst_n(1));
+DFFRE #(.WIDTH(32))		pc_next_in				(.d(if_next_pc_o), .q(next_pc_o), .en(pre_in_en), .clk(clk), .rst_n(1));
 DFFRE #(.WIDTH(`ExcE_W))excs_next				(.d(if_excs_next), .q(if_excs_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		has_excs_next			(.d(if_has_exc_next), .q(if_has_exc_o), .en(en), .clk(clk), .rst_n(rst_n));
+
+always @(posedge clk, negedge rst_n) begin
+        if(!rst_n | !icache_stall) begin
+            branch_pc_reg <= 0;
+			use_branch_pc_reg <= 0;						
+        end
+        else begin
+        	if((branch_en & icache_stall)&(~if_stall_i))
+        	begin
+        		use_branch_pc_reg <= 1;
+        		branch_pc_reg <= branch_pc_i;
+        	end
+        end
+    end
+
+always @(posedge clk, negedge rst_n) begin
+        if(!rst_n | !icache_stall) begin
+            exc_pc_reg <= 0;
+			use_exc_pc_reg <= 0;					
+        end
+        else begin
+        	if((pc_flush_i & icache_stall)&(~if_stall_i))
+        	begin
+        		exc_pc_reg <= flush_pc_i;
+				use_exc_pc_reg <= 1;
+        	end
+        end
+    end
+
+
 
 endmodule
