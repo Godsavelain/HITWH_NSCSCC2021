@@ -612,7 +612,7 @@ assign  ibus_stall = stall_pc_o;
 hilo HILO
 (
   .clk                (clk),
-  .rst_n              (rst_n),
+  .rst_n              (resetn),
   .whidata            (whidata),
   .wlodata            (wlodata),
   .whien              (whien),

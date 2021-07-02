@@ -130,13 +130,12 @@ assign mdu_div_active =  div_active;
 assign mdus1_en  = |mduop_i;
 assign is_signed = mduop_i[0] | mduop_i[2] ;
 
-assign hi_wen 	 = inst_mult | inst_multu | inst_div | inst_divu | inst_mthi | inst_mtlo;
 
 assign inst_mfhi_o = inst_mfhi;
 assign inst_mflo_o = inst_mflo;
 
 assign hi_wen 	 = inst_mult | inst_multu | inst_div | inst_divu | inst_mthi ;
-assign lo_wen 	 = inst_mult | inst_multu | inst_div | inst_divu | inst_mtlo;;
+assign lo_wen 	 = inst_mult | inst_multu | inst_div | inst_divu | inst_mtlo;
 assign hi_o 	 = ({32{inst_mult | inst_multu}} 		& s2_hi_o 	)
 				  |({32{inst_div}} 						& s2_divans [31: 0]	)
 				  |({32{inst_divu}} 					& s2_divuans[31: 0]	)

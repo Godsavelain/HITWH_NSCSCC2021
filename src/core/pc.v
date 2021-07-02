@@ -91,7 +91,7 @@ assign if_excs_next[`ExcE_W-1: 2]	= 0;
 
 assign en 			= 	~ if_stall_i;
 
-assign if_inslot_next = ( if_flush_i | use_exc_pc_reg ) ? 0 : in_delay_slot;
+assign if_inslot_next = ( if_flush_i | use_exc_pc_reg ) ? 0 : (if_inslot_i | in_delay_slot);
 
 
 DFFRE #(.WIDTH(32))		pc_result_next			(.d(pc_next), .q(if_pc_o), .en(en), .clk(clk), .rst_n(1));
