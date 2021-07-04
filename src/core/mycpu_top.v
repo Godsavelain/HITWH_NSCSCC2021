@@ -50,6 +50,11 @@ wire [31: 0] if_bus_vaddr;
 wire [31: 0] id_pc_i;
 wire [31: 0] id_inst_i;
 wire         id_inslot_i;
+wire         id_ex_res_as1_i;
+wire         id_ex_res_as2_i;
+wire [31: 0] id_res_from_ex_i;
+wire [31: 0] raw_data1_i;
+wire [31: 0] raw_data2_i;
 
 wire [31: 0] id_reg1data_i;
 wire [31: 0] id_reg2data_i;
@@ -60,6 +65,7 @@ wire [ 5: 0] id_intr_o;
 wire         id_c0wen_o;
 wire         id_c0ren_o;
 wire [ 7: 0] id_c0addr_o;
+wire         id_is_branch_o;
 
 //ex stage signals
 wire [31: 0] ex_inst_i;
@@ -299,12 +305,21 @@ decoder DECODER
   .id_c0ren_o         (id_c0ren_o         ),
   .id_c0addr_o        (id_c0addr_o        ),
 
-  .id_stallreq_o      (                   )
+  .id_stallreq_o      (                   ),
+
+  .id_is_branch_o     (id_is_branch_o     ),
+  .id_res_from_ex_i   (id_res_from_ex_i   ),
+  .id_ex_res_as1_i    (id_ex_res_as1_i    ),
+  .id_ex_res_as2_i    (id_ex_res_as2_i    ),
+
+  .raw_data1_i        (raw_data1_i),
+  .raw_data2_i        (raw_data2_i)
 );
 
 regfile REGFILE
 (
   .clk                (clk                ),
+  .rst_n              (resetn             ),
 
   .ren1               (rf_ren1_i          ),
   .ren2               (rf_ren2_i          ),
@@ -327,7 +342,14 @@ regfile REGFILE
 
   .ex_nofwd           (rf_ex_nofwd        ),
   .mem_nofwd          (rf_mem_nofwd       ),
-  .stallreq           (streq_id_i         )
+  .stallreq           (streq_id_i         ),
+
+  .id_is_branch       (id_is_branch_o     ),
+  .ex_data_to_id_o    (id_res_from_ex_i),
+  .id_ex_res_as1_o    (id_ex_res_as1_i),
+  .id_ex_res_as2_o    (id_ex_res_as2_i),
+  .raw_data1_o        (raw_data1_i),
+  .raw_data2_o        (raw_data2_i)
 );
 
 execute EXECUTE

@@ -187,7 +187,8 @@ module execute
     assign ex_has_exc		= ex_has_exc_i | ov | (ex_memaddr_low[0] & op_sh) | ((ex_memaddr_low[1:0] != 00) & op_sw)
     						 | (ex_memaddr_low[0] &(op_lh | op_lhu)) | ((ex_memaddr_low[1:0] != 00) & op_lw);
 //to bypass
-	assign ex_wdata_bp_o	= ex_wdata_next;
+	//assign ex_wdata_bp_o	= ex_wdata_next;
+	assign ex_wdata_bp_o	= ex_alures_i;
 	assign ex_nofwd_bp_o	= ex_nofwd_i;
 
 //for mem

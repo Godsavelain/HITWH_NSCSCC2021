@@ -58,7 +58,16 @@ module decoder
     output wire          	id_c0ren_o,
     output wire [ 7: 0]  	id_c0addr_o,
 
- 	output wire 			id_stallreq_o
+ 	output wire 			id_stallreq_o,
+
+ 	//for optimization
+ 	output wire 			id_is_branch_o,
+ 	input  wire [31: 0]		id_res_from_ex_i,
+ 	input  wire 			id_ex_res_as1_i,
+ 	input  wire 			id_ex_res_as2_i,
+
+ 	input  wire [31: 0]     raw_data1_i,  
+    input  wire [31: 0]     raw_data2_i
 );
 
 //output signals
@@ -466,7 +475,7 @@ module decoder
 
     assign id_branch_pc_o   = inst_branch_b ? b_target :
     						  inst_branch_j ? j_target :
-    						  id_reg1data_i;
+    						  branch_opr1;
     assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo | inst_mfc0;
  	wire LZ;     // Less Than Zero
     wire GEZ;    // Greater Than or Equal to Zero
@@ -475,11 +484,16 @@ module decoder
     wire EQ;     // Equal
     wire NEQ;    // Not Equal
 
-    assign LZ     = id_reg1data_i[31];               
+
+	wire [31: 0] 	branch_opr1;
+	wire [31: 0] 	branch_opr2;
+	assign branch_opr1 = id_ex_res_as1_i ? id_res_from_ex_i : raw_data1_i;
+	assign branch_opr2 = id_ex_res_as2_i ? id_res_from_ex_i : raw_data2_i;
+    assign LZ     = branch_opr1[31];               
     assign GEZ    = ~LZ;                      
-    assign LEZ    = (LZ || (id_reg1data_i == 0));    
+    assign LEZ    = (LZ || (branch_opr1 == 0));    
     assign GZ     = ~LEZ;                    
-    assign EQ     = (id_reg1data_i ^ id_reg2data_i) == 0;   
+    assign EQ     = (branch_opr1 ^ branch_opr2) == 0;   
     assign NEQ    = ~EQ;                     
 
     assign id_branch_en_o	= (inst_beq & EQ) | (inst_bne & NEQ) | (inst_bgez & GEZ) | (inst_bgtz & GZ) 
@@ -489,7 +503,10 @@ module decoder
     						| inst_bgezal | inst_bltzal | inst_j   | inst_jal | inst_jr  | inst_jalr;
 
 	assign en 				= ~ id_stall_i;
-//load相关的处理
+
+//to avoid the critical path of ex bypass to id branch to pc
+assign id_is_branch_o = inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
+								 | inst_bgezal | inst_bltzal | inst_jr | inst_jalr;
 
 
 //DFFREs
