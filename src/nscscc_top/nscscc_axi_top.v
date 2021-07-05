@@ -141,7 +141,8 @@ module mycpu_top
     wire [ 3: 0]  dcache_bus_wen;
     wire [31: 0]  dcache_bus_addr;
     wire [31: 0]  dcache_bus_rdata;
-    wire [ 1: 0]  dcache_bus_size;
+    wire [ 1: 0]  dcache_bus_store_size;
+    wire [ 1: 0]  dcache_bus_load_size;
     wire [31: 0]  dcache_bus_wdata;
     wire          dcache_bus_streq;
     wire          dcache_bus_stall;
@@ -177,7 +178,8 @@ mycpu_core_top MY_TOP
   .dcache_bus_addr  (dcache_bus_addr),
   .dcache_bus_wdata (dcache_bus_wdata),
   .dcache_bus_rdata (dcache_bus_rdata),
-  .dcache_bus_size  (dcache_bus_size),
+  .dcache_bus_store_size  (dcache_bus_store_size),
+  .dcache_bus_load_size   (dcache_bus_load_size),
 
 
   .debug_wb_pc      (debug_wb_pc),
@@ -292,7 +294,8 @@ d_cache DCACHE
     .bus_addr                (dcache_bus_addr),
     .bus_rdata               (dcache_bus_rdata),
     .bus_wdata               (dcache_bus_wdata),
-    .bus_size                (dcache_bus_size),
+    .bus_store_size          (dcache_bus_store_size),
+    .bus_load_size           (dcache_bus_load_size),
     //.bus_stall               (dbus_stall),
 
     .status_in               (dcache_status_out), 

@@ -46,7 +46,8 @@ module d_cache
     input  wire [31: 0]  bus_addr,
     output wire [31: 0]  bus_rdata,
     input  wire [31: 0]  bus_wdata,
-    input  wire [ 1: 0]  bus_size,
+    input  wire [ 1: 0]  bus_store_size,
+    input  wire [ 1: 0]  bus_load_size,
     //input  wire          bus_stall,
     //input  wire          bus_stall,
     //input  wire          bus_cached,
@@ -61,7 +62,7 @@ module d_cache
 
     assign arid     = 4'b0;
     assign arlen    = 4'h0;
-    assign arsize   = 3'b010;
+    //assign arsize   = 3'b010;
     assign arburst  = 2'b01;
     assign arlock   = 2'b0;
     assign arcache  = 4'b0;
@@ -107,13 +108,13 @@ module d_cache
     wire         read_handshake;
 
     assign read_req =  ((status_in[0] | status_in[3] | status_in[7] |status_in == 0) & bus_en & !(| bus_wen));
-    //assign read_req = (status_in[0] | status_in == 0) & bus_en & (| bus_wen);
+
     assign araddr   = bus_addr;
     assign arvalid  = read_req | status_in[1];
     assign read_addr_handshake = arvalid & arready;
 
     assign write_req = (status_in[0] | status_in[3] | status_in[7] | status_in == 0) & bus_en & (| bus_wen);
-    //assign read_req = (status_in[0] | status_in == 0) & bus_en & (| bus_wen);
+
     assign awaddr   = bus_addr;
     assign awvalid  = write_req | status_in[4];
     assign write_addr_handshake = awvalid & awready;
@@ -121,7 +122,8 @@ module d_cache
     assign read_handshake = rvalid & rready;
     assign write_handshake = wvalid & wready;
 
-    assign awsize   = { 1'b0, bus_size};
+    assign awsize   = { 1'b0, bus_store_size};
+    assign arsize   = { 1'b0, bus_load_size};
     assign wstrb    = bus_wen;
     assign wvalid   = status_in[4] | status_in[5];
     assign wdata    = bus_wdata;
@@ -132,12 +134,14 @@ module d_cache
 
     assign status_next = (status_in[0] | status_in == 0) && read_req    ? READ_REQUEST  :
                          status_in[1] && read_addr_handshake            ? READ_TRANSFER :
+                         status_in[1] && !read_addr_handshake           ? READ_REQUEST :
                          status_in[2] && !(rlast & read_handshake)      ? READ_TRANSFER :
                          status_in[2] && (rlast & read_handshake)       ? READ_END      :
                          (status_in[3] | status_in[7]) && !read_req && !write_req       ? IDLE :
                          (status_in[3] | status_in[7]) && read_req      ? READ_REQUEST  :
                          status_in[0] && write_req                      ? WRITE_REQUEST :
                          status_in[4] && write_addr_handshake           ? WRITE_TRANSFER :
+                         status_in[4] && !write_addr_handshake          ? WRITE_REQUEST :
                          status_in[5] && !(wlast & write_handshake)     ? WRITE_TRANSFER :
                          status_in[5] && (wlast & write_handshake)      ? WRITE_RESPONSE :
                          status_in[6] && !bvalid                        ? WRITE_RESPONSE :

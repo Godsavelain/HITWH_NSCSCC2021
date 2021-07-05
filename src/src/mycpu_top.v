@@ -25,7 +25,8 @@ module mycpu_core_top
   output wire [31: 0]        dcache_bus_addr,
   output wire [31: 0]        dcache_bus_wdata,
   input  wire [31: 0]        dcache_bus_rdata,
-  output wire [ 1: 0]        dcache_bus_size,
+  output wire [ 1: 0]        dcache_bus_store_size,
+  output wire [ 1: 0]        dcache_bus_load_size,
 
   //debug
   output wire [31: 0]        debug_wb_pc,
@@ -411,7 +412,8 @@ execute EXECUTE
   .ex_memwen_o        (dcache_bus_wen      ),   
   .ex_memaddr_o       (ex_bus_vaddr        ), 
   .ex_memwdata_o      (dcache_bus_wdata    ),
-  .ex_bus_size        (dcache_bus_size     ),
+  .ex_bus_store_size  (dcache_bus_store_size     ),
+  .ex_bus_load_size  (dcache_bus_load_size),
   .ex_storeinst_o     (ex_storeinst_o     ), 
   .ex_bad_memaddr_o   (ex_bad_memaddr_o   ), 
 

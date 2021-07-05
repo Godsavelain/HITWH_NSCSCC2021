@@ -64,7 +64,8 @@ module execute
 	output wire [ 3: 0]		ex_memwen_o,	//data_sram_wen	
 	output wire [31: 0] 	ex_memaddr_o,	//data_sram_addr
     output wire [31: 0] 	ex_memwdata_o,	//data_sram_wdata
-    output wire [ 1: 0]		ex_bus_size,
+    output wire [ 1: 0]		ex_bus_store_size,
+    output wire [ 1: 0]		ex_bus_load_size,
     output wire 			ex_storeinst_o, //could cause store
 
     output wire [`MMOP] 	ex_memop_o,
@@ -203,6 +204,8 @@ module execute
 
 	wire [ 1: 0]  swl_bus; 
 	wire [ 1: 0]  swr_bus; 
+	wire [ 1: 0]  lwl_bus;
+	wire [ 1: 0]  lwr_bus;
 
 	assign ex_memaddr_low	= ex_alures_i[1:0];
 	assign ex_memwen_sb		= ex_memaddr_low == 2'b00 ? 4'b0001:
@@ -240,7 +243,8 @@ module execute
 							  4'b0000; 	    			//写使能	
 	assign ex_storeinst_o   = op_sb | op_sh | op_sw | op_swl | op_swr ;
 
-	assign ex_memaddr_o 	= {ex_alures_i[31:2],2'b00};		//data_sram_addr  访存地址通过alu计算
+	//assign ex_memaddr_o 	= {ex_alures_i[31:2],2'b00};		//data_sram_addr  访存地址通过alu计算
+	assign ex_memaddr_o 	= ex_alures_i;		//data_sram_addr  访存地址通过alu计算
 	assign ex_bad_memaddr_next = ex_alures_i;
 	assign ex_memwdata_o 	= op_sb ? {4{ex_rtvalue_i[7:0]}} :
 							  op_sh ? {2{ex_rtvalue_i[15:0]}}:
@@ -258,11 +262,27 @@ module execute
 							  ex_memaddr_low == 2'b10 ? 2'b01 :
 							  2'b00;
 
-	assign ex_bus_size		= op_sb 	? 2'b00:
-							  op_sh 	? 2'b01:
-							  op_swl	? swl_bus :
-							  op_swr	? swr_bus :
+	assign lwl_bus 			= ex_memaddr_low == 2'b00 ? 2'b00 :
+							  ex_memaddr_low == 2'b01 ? 2'b01 :
+							  ex_memaddr_low == 2'b10 ? 2'b10 :
 							  2'b10;
+
+	assign lwr_bus			= ex_memaddr_low == 2'b00 ? 2'b10 :
+							  ex_memaddr_low == 2'b01 ? 2'b10 :
+							  ex_memaddr_low == 2'b10 ? 2'b01 :
+							  2'b00;
+
+	assign ex_bus_store_size		= op_sb 	? 2'b00:
+							  		op_sh 	? 2'b01:
+							  		op_swl	? swl_bus :
+							  		op_swr	? swr_bus :
+							  		2'b10;
+
+	assign ex_bus_load_size			= op_lb | op_lbu 	? 2'b00:
+							  		op_lh   | op_lhu 	? 2'b01:
+							  		op_lwl	? lwl_bus :
+							  		op_lwr	? lwr_bus :
+							  		2'b10;
 
 
 //to mdu
