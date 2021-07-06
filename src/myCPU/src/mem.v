@@ -14,7 +14,7 @@ module mem
 	input wire [ 1: 0]  mem_memaddr_low_i,
 
 	input wire [ 4: 0]	mem_waddr_i,
-	input wire [31: 0]	mem_wdata_i,
+    (*mark_debug = "true"*)input wire [31: 0]	mem_wdata_i,
 	input wire 			mem_c0_ren_i,
 	input wire [31: 0]	mem_c0data_i,
 	input wire [ 3: 0]	mem_wren_i,
@@ -22,7 +22,7 @@ module mem
 	input wire 			mem_inst_load_i,
 
 	input wire 			mem_stall_i,
-	input wire 			mem_flush_i,
+    input wire 			mem_flush_i,
 
 	//from mdu
 	input wire 			mem_s2_stallreq_i,	
@@ -32,7 +32,7 @@ module mem
 	output wire 		mem_memop_o,
 
 	output wire [ 4: 0]	mem_waddr_o,
-	output wire [31: 0]	mem_wdata_o,
+    (*mark_debug = "true"*)output wire [31: 0]	mem_wdata_o,
 	output wire [ 3: 0]	mem_wren_o,
 	output wire [31: 0] mem_pc_o,
 	//for bypass

@@ -4,17 +4,17 @@ module cp0
 (
 	input wire 			clk,
 	input wire 			rst_n,
-	input wire 	[ 5: 0] cp0_intr_i,//外部中断
-	input wire 	[ 7: 0]	cp0_addr_i,//读地址
-	input wire 			cp0_ren_i,//读使能
-	input wire 	[31: 0]	cp0_wdata_i,//写数据
-	input wire 			cp0_wen_i,//写使能
+    input wire 	[ 5: 0] cp0_intr_i,//外部中断
+    input wire 	[ 7: 0]	cp0_addr_i,//读地�?
+	input wire 			cp0_ren_i,//读使�?
+	input wire 	[31: 0]	cp0_wdata_i,//写数�?
+	input wire 			cp0_wen_i,//写使�?
 
 	input wire 	[31: 0]	cp0_pc_i,//异常指令对应的pc
 	input wire 			cp0_exc_flag_i,//标记发生异常
-	input wire 	[`ExcT]	cp0_exc_type_i,//标记异常类型
-	input wire 	[31: 0]	cp0_baddr_i,//来自Exceptions，地址异常的地址
-	input wire 	[ 1: 0]	cp0_cpun_i, //来自Exceptions，协处理器缺失异常
+    input wire 	[`ExcT]	cp0_exc_type_i,//标记异常类型
+	input wire 	[31: 0]	cp0_baddr_i,//来自Exceptions，地�?异常的地�?
+	input wire 	[ 1: 0]	cp0_cpun_i, //来自Exceptions，协处理器缺失异�?
 	input wire 			cp0_inslot_i,
 	//input wire 	[31: 0]	cp0_issave_i,//当前指令写内存，来自MEM
 
@@ -30,13 +30,13 @@ module cp0
 );
 
     // Count & Compare
-    reg  [32: 0] Count2;//每两个时钟周期加一
+    reg  [32: 0] Count2;//每两个时钟周期加�?
     reg  [31: 0] Compare;
     wire [31: 0] Count = Count2[32:1];
 
     reg  timer_intr;
     wire timer_eq = (Count ^ Compare) == 0;//compare == count
-    wire timer_on = Compare != 0 && timer_eq;//定时器异常
+    wire timer_on = Compare != 0 && timer_eq;//定时器异�?
 
     // Status
     reg          Status_BEV;
@@ -62,7 +62,7 @@ module cp0
     reg  [ 7: 0] Cause_IP;
     reg  [ 4: 0] Cause_ExcCode;
 
-    wire [31: 0] Cause = {
+(*mark_debug = "true"*)wire [31: 0] Cause = {
         Cause_BD,       // 31 R
         Cause_TI,       // 30 TI
         14'b0,
@@ -220,7 +220,7 @@ module cp0
 
             // Exceptions
             if(cp0_exc_flag_i) begin
-                case (cp0_exc_type_i)//普通异常
+                case (cp0_exc_type_i)//普�?�异�?
                     `ExcT_Intr,
                     `ExcT_AdEL1,
                     `ExcT_AdEL2,
@@ -258,7 +258,7 @@ module cp0
               endcase
 
                 // ExcCode
-                case (cp0_exc_type_i)//异常码
+                case (cp0_exc_type_i)//异常�?
                     `ExcT_Intr: Cause_ExcCode <= `ExcC_Intr;
                     `ExcT_RI:   Cause_ExcCode <= `ExcC_RI;
                     `ExcT_Ov:   Cause_ExcCode <= `ExcC_Ov;

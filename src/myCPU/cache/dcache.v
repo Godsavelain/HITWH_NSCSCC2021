@@ -5,7 +5,7 @@ module d_cache
     input  wire          aclk,
     input  wire          aresetn,
     output wire  [ 3: 0] arid,
-    output wire  [31: 0] araddr,
+    (*mark_debug = "true"*)output wire  [31: 0] araddr,
     output wire  [ 3: 0] arlen,
     output wire  [ 2: 0] arsize,
     output wire  [ 1: 0] arburst,
@@ -15,13 +15,13 @@ module d_cache
     output wire          arvalid,
     input  wire          arready,
     input  wire  [ 3: 0] rid,
-    input  wire  [31: 0] rdata,
+    (*mark_debug = "true"*)input  wire  [31: 0] rdata,
     input  wire  [ 1: 0] rresp,
     input  wire          rlast,
     input  wire          rvalid,
     output wire          rready,
     output wire  [ 3: 0] awid,
-    output wire  [31: 0] awaddr,
+    (*mark_debug = "true"*)output wire  [31: 0] awaddr,
     output wire  [ 3: 0] awlen,
     output wire  [ 2: 0] awsize,
     output wire  [ 1: 0] awburst,
@@ -31,7 +31,7 @@ module d_cache
     output wire          awvalid,
     input  wire          awready,
     output wire  [ 3: 0] wid,
-    output wire  [31: 0] wdata,
+    (*mark_debug = "true"*)output wire  [31: 0] wdata,
     output wire  [ 3: 0] wstrb,
     output wire          wlast,
     output wire          wvalid,
@@ -99,13 +99,13 @@ module d_cache
     wire [`DCACHE_STATS] status;
     wire [`DCACHE_STATS] status_next;
     wire         read_req;
-    wire         read_addr_handshake;
+    (*mark_debug = "true"*)wire         read_addr_handshake;
 
     wire         write_req;
-    wire         write_addr_handshake;
+    (*mark_debug = "true"*)wire         write_addr_handshake;
 
-    wire         write_handshake;
-    wire         read_handshake;
+    (*mark_debug = "true"*)wire         write_handshake;
+    (*mark_debug = "true"*)wire         read_handshake;
 
     assign read_req =  ((status_in[0] | status_in[3] | status_in[7] |status_in == 0) & bus_en & !(| bus_wen));
 

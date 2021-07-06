@@ -20,7 +20,7 @@ module execute
  	input wire 				ex_divinst_i,
  	input wire 				ex_mduinst_i,
 
- 	input wire [`ExcE] 		ex_excs_i,
+	input wire [`ExcE] 		ex_excs_i,
  	input wire 				ex_has_exc_i,
  	input wire 				ex_ov_inst_i,
 
@@ -62,7 +62,7 @@ module execute
  	//to mem
  	output wire				ex_memen_o,		//data_sram_en
 	output wire [ 3: 0]		ex_memwen_o,	//data_sram_wen	
-	output wire [31: 0] 	ex_memaddr_o,	//data_sram_addr
+    output wire [31: 0] 	ex_memaddr_o,	//data_sram_addr
     output wire [31: 0] 	ex_memwdata_o,	//data_sram_wdata
     output wire [ 1: 0]		ex_bus_store_size,
     output wire [ 1: 0]		ex_bus_load_size,
@@ -193,7 +193,7 @@ module execute
 	assign ex_nofwd_bp_o	= ex_nofwd_i;
 
 //for mem
-	wire [ 1: 0]  ex_memaddr_low; 						//地址最末两位
+	wire [ 1: 0]  ex_memaddr_low; 						//地址�?末两�?
 	wire [ 3: 0]  ex_memwen_sb;
 	wire [ 3: 0]  ex_memwen_sh;
 	wire [ 3: 0]  ex_memwen_swl;
@@ -240,7 +240,7 @@ module execute
 							  op_sw ? 4'b1111	   :
 							  op_swl? ex_memwen_swl:
 							  op_swr? ex_memwen_swr:
-							  4'b0000; 	    			//写使能	
+							  4'b0000; 	    			//写使�?	
 	assign ex_storeinst_o   = op_sb | op_sh | op_sw | op_swl | op_swr ;
 
 	//assign ex_memaddr_o 	= {ex_alures_i[31:2],2'b00};		//data_sram_addr  访存地址通过alu计算
@@ -311,7 +311,7 @@ DFFRE #(.WIDTH(8))		c0addr_next			(.d(ex_c0addr_next), .q(ex_c0addr_o), .en(en),
 DFFRE #(.WIDTH(32))		badvaddr_next		(.d(ex_bad_memaddr_next), .q(ex_bad_memaddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
-//除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指令
+//除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指�?
 assign ex_stallreq_o = (ex_divinst_i & mdu_is_active) | (ex_mduinst_i & mdu_div_active);
 
 

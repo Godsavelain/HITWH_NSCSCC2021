@@ -113,8 +113,8 @@ module decoder
 	wire        src1_is_sa;
 	wire        src1_is_pc;
 	wire        src2_is_8;
-	wire 		src2_is_imm_s;//有符号扩展
-	wire 		src2_is_imm_u;//无符号扩展
+	wire 		src2_is_imm_s;//有符号扩�?
+	wire 		src2_is_imm_u;//无符号扩�?
 	wire		src2_is_joffset;
 
 	wire [ 5: 0] opcode;
@@ -217,7 +217,7 @@ module decoder
 
 	wire        inst_break;
 	wire        inst_break_0;
-	wire        inst_syscall;
+    (*mark_debug = "true"*)	wire        inst_syscall;
 	wire        inst_syscall_0;
 
     //assign id_inst 		= if_flush_i ? 0 : id_inst_i;
@@ -363,10 +363,15 @@ module decoder
 	assign inst_mtc0_0 = op_d[`OP_COP0] & rs_d[5'h04];
 	assign inst_mtc0   = inst_mtc0_0 & ((id_inst_i[10: 3] ^ 0)==0);
 
+	// assign inst_break_0= op_d[`OP_SPECIAL] & func_d[6'h0d];
+	// assign inst_break  = inst_break_0 & ((id_inst_i[25: 6] ^ 0)==0);
+	// assign inst_syscall_0= op_d[`OP_SPECIAL] & func_d[6'h0c];
+	// assign inst_syscall= inst_syscall_0 & ((id_inst_i[25: 6] ^ 0)==0);
+
 	assign inst_break_0= op_d[`OP_SPECIAL] & func_d[6'h0d];
-	assign inst_break  = inst_break_0 & ((id_inst_i[25: 6] ^ 0)==0);
+	assign inst_break  = inst_break_0 ;
 	assign inst_syscall_0= op_d[`OP_SPECIAL] & func_d[6'h0c];
-	assign inst_syscall= inst_syscall_0 & ((id_inst_i[25: 6] ^ 0)==0);
+	assign inst_syscall= inst_syscall_0 ;
 
 	assign alu_op[ 0] = inst_addu | inst_addiu | inst_lw | inst_lhu | inst_lh 
 					  | inst_add  | inst_lbu   | inst_lb | inst_sw  | inst_sh

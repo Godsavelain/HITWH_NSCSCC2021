@@ -8,14 +8,14 @@ module pc
 	input wire 				pc_flush_i,
 	input wire				if_stall_i,			//from controller
 	input wire 				icache_ask,//icache 在此周期注册地址
-	input wire 				icache_stall,//icache 在等待数据
+	input wire 				icache_stall,//icache 在等待数�?
 	//input wire				usrmode,
 	input wire				branch_en,
 	input wire [31: 0]		if_pc_i,
 
 	input wire [31: 0]		flush_pc_i,
 	input wire [31: 0]		branch_pc_i,
-	input wire [31: 0]		inst_i,			//inst_sram_rdata
+	(*mark_debug = "true"*)input wire [31: 0]		inst_i,			//inst_sram_rdata
 	input wire				if_inslot_i,
 
 	output wire [31: 0]		next_pc_o,
