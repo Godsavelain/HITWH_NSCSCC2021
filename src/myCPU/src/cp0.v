@@ -26,7 +26,7 @@ module cp0
 	output wire  [31: 0] EPC_o,
 	output wire  [31: 0] Config_o,
 	output wire  [31: 0] ErrorEPC_o,
-	output wire 		 exc_intr//标记产生中断
+    output wire 		 exc_intr//标记产生中断
 );
 
     // Count & Compare
@@ -62,7 +62,7 @@ module cp0
     reg  [ 7: 0] Cause_IP;
     reg  [ 4: 0] Cause_ExcCode;
 
-(*mark_debug = "true"*)wire [31: 0] Cause = {
+    wire [31: 0] Cause = {
         Cause_BD,       // 31 R
         Cause_TI,       // 30 TI
         14'b0,

@@ -86,8 +86,9 @@ module execute
 
  	//bypass 
  	output wire	[31: 0]		ex_wdata_bp_o,
- 	output wire 			ex_nofwd_bp_o
-
+ 	output wire 			ex_nofwd_bp_o,
+ 	input  wire 			ex_pcvalid_i,
+    output wire 			ex_pcvalid_o
 
 );
 	
@@ -112,6 +113,7 @@ module execute
     wire 		[ 7: 0]  	ex_c0addr_next;  
     wire 		[31: 0]  	ex_c0_wdata_next;
     wire 		[31: 0]		ex_bad_memaddr_next;  
+    wire					ex_pcvalid_next;
 
 //useful values
 		
@@ -170,7 +172,7 @@ module execute
 	assign ex_inslot_next   = ex_flush_i ? 0 : ex_inslot_i;
 	assign ex_memop_next	= ex_flush_i ? 0 : ex_memop_i;
 	assign ex_nofwd_next	= ex_flush_i ? 0 : ex_nofwd_i;
-	assign ex_pc_next		= ex_flush_i ? 0 : ex_pc_i;
+	assign ex_pc_next		= ex_pc_i;
 	assign ex_inst_load_next= ex_flush_i ? 0 : op_lb | op_lbu | op_lh | op_lhu | op_lw | op_lwl | op_lwr;
 	assign ex_memaddr_low_next = ex_flush_i ? 0 : ex_memaddr_low;
 	assign ex_mdu_inst_next = ex_flush_i ? 0 : ex_mduinst_i;
@@ -183,6 +185,7 @@ module execute
     assign ex_c0ren_next	= ex_flush_i ? 0 : ex_c0ren_i;
     assign ex_c0addr_next	= ex_flush_i ? 0 : ex_c0addr_i;
     assign ex_c0_wdata_next = ex_flush_i ? 0 : ex_rtvalue_i;
+    assign ex_pcvalid_next	= ex_flush_i ? 0 : ex_pcvalid_i;
 
     //assign ex_has_exc_next	= ex_flush_i ? 0 :ex_has_exc_i | ov | ex_excs_next[3] | ex_excs_next[2];
     assign ex_has_exc		= ex_has_exc_i | ov | (ex_memaddr_low[0] & op_sh) | ((ex_memaddr_low[1:0] != 00) & op_sw)
@@ -309,6 +312,7 @@ DFFRE #(.WIDTH(1))		c0ren_next			(.d(ex_c0ren_next), .q(ex_c0ren_o), .en(en), .c
 DFFRE #(.WIDTH(32))		c0data_next			(.d(ex_c0_wdata_next), .q(ex_c0_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(8))		c0addr_next			(.d(ex_c0addr_next), .q(ex_c0addr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		badvaddr_next		(.d(ex_bad_memaddr_next), .q(ex_bad_memaddr_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))		pcvalid_next		(.d(ex_pcvalid_next), .q(ex_pcvalid_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 //除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指�?

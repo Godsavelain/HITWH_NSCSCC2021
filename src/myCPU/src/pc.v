@@ -15,7 +15,7 @@ module pc
 
 	input wire [31: 0]		flush_pc_i,
 	input wire [31: 0]		branch_pc_i,
-	(*mark_debug = "true"*)input wire [31: 0]		inst_i,			//inst_sram_rdata
+	input wire [31: 0]		inst_i,			//inst_sram_rdata
 	input wire				if_inslot_i,
 
 	output wire [31: 0]		next_pc_o,
@@ -29,8 +29,9 @@ module pc
 	output wire 			if_has_exc_o,
 
 	//constants     can't write instram
-	output wire [ 3: 0] 	inst_sram_wen  ,
-    output wire [31: 0] 	inst_sram_wdata
+	output wire [ 3: 0] 	inst_sram_wen,
+    output wire [31: 0] 	inst_sram_wdata,
+    output wire 			pc_pcvalid_o
 
     
 	//output wire		if_inslot_o,
@@ -45,6 +46,7 @@ wire 			pre_in_en;
 //wire[31:0] 	inst_next;
 wire 			if_inslot_next;
 wire [`ExcE] 	if_excs_next;
+wire			pc_pcvalid_next;
 
 reg [31: 0] branch_pc_reg;
 reg 		use_branch_pc_reg;
@@ -88,6 +90,7 @@ assign if_has_exc_next  = ( if_flush_i | use_exc_pc_reg ) ? 0 : ~(if_pc_i[1:0] =
 assign if_excs_next[0]	= 0;
 assign if_excs_next[1]	= ( if_flush_i | use_exc_pc_reg ) ? 0 : ~(if_pc_i[1:0] == 2'b00);
 assign if_excs_next[`ExcE_W-1: 2]	= 0;
+assign pc_pcvalid_next	= ( if_flush_i | use_exc_pc_reg ) ? 0 : 1;
 
 assign en 			= 	~ if_stall_i;
 
@@ -100,6 +103,9 @@ DFFRE #(.WIDTH(32))		inst_result_next		(.d(if_inst_next), .q(if_inst_o), .en(en)
 DFFRE #(.WIDTH(32))		pc_next_in				(.d(if_next_pc_o), .q(next_pc_o), .en(pre_in_en), .clk(clk), .rst_n(1));
 DFFRE #(.WIDTH(`ExcE_W))excs_next				(.d(if_excs_next), .q(if_excs_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		has_excs_next			(.d(if_has_exc_next), .q(if_has_exc_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))		pcvalid_next			(.d(pc_pcvalid_next), .q(pc_pcvalid_o), .en(en), .clk(clk), .rst_n(rst_n));
+
+
 
 always @(posedge clk, negedge rst_n) begin
         if(!rst_n | !icache_stall) begin

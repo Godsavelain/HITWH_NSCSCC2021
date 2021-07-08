@@ -46,6 +46,8 @@ wire [31: 0] if_pc_i;
 wire [`ExcE] if_excs_o;
 wire         if_has_exc_o;
 wire [31: 0] if_bus_vaddr;
+wire         if_pcvalid_o;
+
 
 //id stage signals
 wire [31: 0] id_pc_i;
@@ -67,6 +69,7 @@ wire         id_c0wen_o;
 wire         id_c0ren_o;
 wire [ 7: 0] id_c0addr_o;
 wire         id_is_branch_o;
+wire         id_pcvalid_o;
 
 //ex stage signals
 wire [31: 0] ex_inst_i;
@@ -99,6 +102,8 @@ wire         ex_ov_inst_i;
 wire [`ExcE] ex_excs_o;
 wire [ 5: 0] ex_intr_o;
 wire [31: 0] ex_bus_vaddr;
+wire         ex_pcvalid_o;
+
 //to alu
 wire [31: 0] opr1;
 wire [31: 0] opr2;
@@ -239,7 +244,8 @@ pc PC
   .next_pc_o          (if_pc_i            ),
 
   .inst_sram_wen      (icache_bus_wen      ),
-  .inst_sram_wdata    (icache_bus_wdata    )
+  .inst_sram_wdata    (icache_bus_wdata    ),
+  .pc_pcvalid_o       (if_pcvalid_o)
 );
 
 mmu IMMU
@@ -314,7 +320,9 @@ decoder DECODER
   .id_ex_res_as2_i    (id_ex_res_as2_i    ),
 
   .raw_data1_i        (raw_data1_i),
-  .raw_data2_i        (raw_data2_i)
+  .raw_data2_i        (raw_data2_i),
+  .id_pcvalid_i       (if_pcvalid_o),
+  .id_pcvalid_o       (id_pcvalid_o)
 );
 
 regfile REGFILE
@@ -430,7 +438,9 @@ execute EXECUTE
   .ex_c0_wdata_o      (ex_c0_wdata_o      ),
 
   .ex_wdata_bp_o      (ex_wdata_bp        ),
-  .ex_nofwd_bp_o      (rf_ex_nofwd        )
+  .ex_nofwd_bp_o      (rf_ex_nofwd        ),
+  .ex_pcvalid_i       (id_pcvalid_o),
+  .ex_pcvalid_o       (ex_pcvalid_o)
 );
 
 mmu DMMU
@@ -487,6 +497,7 @@ exception EXC
   .exc_EPC_i          (exc_EPC_i),
   .exc_ErrorEPC_i     (exc_ErrorEPC_i),//from cp0
   .exc_excs_i         (ex_excs_o),//异常向量
+  .exc_pcvalid_i      (ex_pcvalid_o),
 
   .exc_intr_i         (exc_intr_i),//中断信号，来自cp0
 

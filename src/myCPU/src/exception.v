@@ -2,12 +2,13 @@
 
 module exception
 (
-	  input wire  [31: 0]  exc_pc_i,//进入PC
-	  input wire 			     exc_mem_en_i,//当前有写请求
+    input wire  [31: 0]  exc_pc_i,//进入PC
+	input wire 			     exc_mem_en_i,//当前有写请求
     input  wire [31: 0]  exc_m_addr_i,
     input wire  [31: 0]  exc_EPC_i,
     input wire  [31: 0]  exc_ErrorEPC_i,//from cp0
     input wire  [`ExcE]  exc_excs_i,//异常向量
+    input wire           exc_pcvalid_i,
 
     input wire           exc_intr_i,//中断信号，来自cp0
 
@@ -21,7 +22,7 @@ module exception
     wire [`ExcE] excs;
 
     assign  excs [`ExcE_W-1: 1]  = exc_excs_i[`ExcE_W-1: 1];
-    assign  excs [`Exc_Intr   ]  = exc_intr_i & ~exc_mem_en_i;
+    assign  excs [`Exc_Intr   ]  = exc_intr_i && ~exc_mem_en_i && exc_pcvalid_i;
     assign  exc_flag_o 			     = exc_type_o != 0;
 
     assign  exc_type_o  			 = excs[`Exc_Intr  ] ? `ExcT_Intr :

@@ -14,7 +14,7 @@ module mem
 	input wire [ 1: 0]  mem_memaddr_low_i,
 
 	input wire [ 4: 0]	mem_waddr_i,
-    (*mark_debug = "true"*)input wire [31: 0]	mem_wdata_i,
+    input wire [31: 0]	mem_wdata_i,
 	input wire 			mem_c0_ren_i,
 	input wire [31: 0]	mem_c0data_i,
 	input wire [ 3: 0]	mem_wren_i,
@@ -32,7 +32,7 @@ module mem
 	output wire 		mem_memop_o,
 
 	output wire [ 4: 0]	mem_waddr_o,
-    (*mark_debug = "true"*)output wire [31: 0]	mem_wdata_o,
+    output wire [31: 0]	mem_wdata_o,
 	output wire [ 3: 0]	mem_wren_o,
 	output wire [31: 0] mem_pc_o,
 	//for bypass
@@ -148,7 +148,7 @@ module mem
 								  					mem_memop_i[9] ? lwr_wren :
 								  					mem_wren_i;
 	assign  mem_memop_next		= mem_flush_i ? 0 :mem_memop_i;
-	assign  mem_pc_next			= mem_flush_i ? 0 :mem_pc_i;
+	assign  mem_pc_next			= mem_pc_i;
 
 
 //for bypass

@@ -2,16 +2,16 @@
 
 module alu
 (
-    (*mark_debug = "true"*)input wire  [31: 0]			opr1,
-    (*mark_debug = "true"*)input wire  [31: 0]			opr2,
+    input wire  [31: 0]			opr1,
+    input wire  [31: 0]			opr2,
 	input wire  [`AOP]			alu_op,
 
-    (*mark_debug = "true"*)output wire [31: 0]			alu_res,
+    output wire [31: 0]			alu_res,
 	output wire 				ov
 );
 
 //operations
-    (*mark_debug = "true"*)wire 	op_add;		
+    wire 	op_add;		
 	wire 	op_sub;
 	wire 	op_slt;// signed set less than
 	wire 	op_sltu;
@@ -37,7 +37,7 @@ module alu
 	assign   		op_sra  = alu_op[10];
 	assign   		op_lui  = alu_op[11];
 
-    (*mark_debug = "true"*)wire [31: 0]	add_sub_result;
+    wire [31: 0]	add_sub_result;
 	wire [31: 0]	slt_result;
 	wire [31: 0]	sltu_result;
 	wire [31: 0]	and_result;
@@ -84,7 +84,7 @@ module alu
 	assign sra_result			=	($signed(opr2)) >>> opr1 [ 4: 0];
 
 //choose the output
-    (*mark_debug = "true"*)assign alu_res 				= 	({32{op_add | op_sub}} & add_sub_result)
+    assign alu_res 				= 	({32{op_add | op_sub}} & add_sub_result)
 								|	({32{op_slt}}		   & slt_result)
 								|	({32{op_sltu}}		   & sltu_result)
 								|	({32{op_and}}		   & and_result)

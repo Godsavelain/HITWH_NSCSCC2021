@@ -67,7 +67,9 @@ module decoder
  	input  wire 			id_ex_res_as2_i,
 
  	input  wire [31: 0]     raw_data1_i,  
-    input  wire [31: 0]     raw_data2_i
+    input  wire [31: 0]     raw_data2_i,
+    input  wire 			id_pcvalid_i,
+    output wire 			id_pcvalid_o
 );
 
 //output signals
@@ -98,6 +100,7 @@ module decoder
     wire          		id_c0wen_next;
     wire          		id_c0ren_next;
     wire [ 7: 0] 		id_c0addr_next;
+    wire				id_pcvalid_next;
 
 
     wire [63: 0] op_d;
@@ -217,7 +220,7 @@ module decoder
 
 	wire        inst_break;
 	wire        inst_break_0;
-    (*mark_debug = "true"*)	wire        inst_syscall;
+    wire        inst_syscall;
 	wire        inst_syscall_0;
 
     //assign id_inst 		= if_flush_i ? 0 : id_inst_i;
@@ -403,7 +406,7 @@ module decoder
 	assign mem_op[11] = inst_swr;
 
 //transfer info to EX stage
-	assign id_pc_next 		= id_flush_i ? 0 : id_pc_i;
+	assign id_pc_next 		= id_pc_i;
 	assign id_ren1_o		= inst_add | inst_addi | inst_addu | inst_addiu | inst_sub | inst_subu
 							| inst_slt | inst_slti | inst_sltu | inst_sltiu | inst_div | inst_divu
 							| inst_mult| inst_multu| inst_and  | inst_andi  | inst_nor | inst_or
@@ -464,6 +467,8 @@ module decoder
 	assign id_c0wen_next 	= inst_mtc0;
 	assign id_c0ren_next 	= inst_mfc0;
 	assign id_c0addr_next 	= {id_inst_i[15:11],id_inst_i[2:0]};
+	assign id_pcvalid_next  = id_flush_i ? 0 : id_pcvalid_i;
+
 	//for branch outputs
 	wire [31: 0] j_target;	//j and jal
     wire [31: 0] b_target;	//branch target
@@ -545,6 +550,7 @@ DFFRE #(.WIDTH(1))			nofwd_next			(.d(id_nofwd_next), .q(id_nofwd_o), .en(en), .
 DFFRE #(.WIDTH(`ExcE_W))	excs_next			(.d(id_excs_next), .q(id_excs_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			has_exc_next		(.d(id_has_exc_next), .q(id_has_exc_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			ov_inst_next		(.d(id_ov_inst_next), .q(id_ov_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))			pcvalid_next		(.d(id_pcvalid_next), .q(id_pcvalid_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 
