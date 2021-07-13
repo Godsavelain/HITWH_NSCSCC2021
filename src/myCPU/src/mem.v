@@ -25,7 +25,10 @@ module mem
     input wire 			mem_flush_i,
 
 	//from mdu
-	input wire 			mem_s2_stallreq_i,	
+	input wire 			mem_s2_stallreq_i,
+
+	//from dcache
+	input wire			dcache_axi_stall_i,	
 
 	output wire [31: 0]	mem_inst_o,
 	output wire 		mem_inslot_o,

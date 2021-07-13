@@ -6,20 +6,26 @@ module mycpu_core_top
   input wire                resetn,
   input wire  [ 5: 0]       ext_int,
 
+  input wire                 icache_axi_stall,
+  input wire                 dcache_axi_stall,
   input wire                 icache_stall,
   input wire                 dcache_stall,
-  input wire                 icache_ask,
   output wire                ibus_stall,
   //output wire                dbus_stall,
 
-  //to/from icache
+  //to/from icache_axi and icache
   output wire                icache_bus_en,
   output wire [ 3: 0]        icache_bus_wen,
   output wire [31: 0]        icache_bus_addr,
   output wire [31: 0]        icache_bus_wdata,
   input  wire [31: 0]        icache_bus_rdata, 
 
-  //to/from dcache
+  input  wire [31: 0]        icache_inst,
+  input  wire                icache_data_valid,
+  output wire                ibus_cached,
+  output wire [31: 0]        cpu_virtual_addr_o,
+
+  //to/from dcache_axi
   output wire                dcache_bus_en,
   output wire [ 3: 0]        dcache_bus_wen,
   output wire [31: 0]        dcache_bus_addr,
@@ -27,6 +33,8 @@ module mycpu_core_top
   input  wire [31: 0]        dcache_bus_rdata,
   output wire [ 1: 0]        dcache_bus_store_size,
   output wire [ 1: 0]        dcache_bus_load_size,
+
+  output wire                dbus_cached,
 
   //debug
   output wire [31: 0]        debug_wb_pc,
@@ -189,7 +197,6 @@ wire        stall_ex_o;
 wire        stall_mem_o;
 wire        stall_wb_o;
 
-wire        flush_pc_o;
 wire        flush_id_o;
 wire        flush_ex_o;
 wire        flush_mem_o;
@@ -207,6 +214,7 @@ wire [31: 0] hilo_lo_o;
 //exceptions
  wire  [31: 0]  exc_EPC_i;
  wire  [31: 0]  exc_ErrorEPC_i;//from cp0
+ wire  [ 2: 0]  ConfigK0_o;
 
  wire           exc_intr_i;//中断信号，来自cp0
 
@@ -216,6 +224,11 @@ wire [31: 0] hilo_lo_o;
  wire [ 1: 0]  exc_cpun_o;
 
 
+ //tlb
+ wire          icache_cached;
+ wire          dcache_cached;
+
+
 // module declaration
 pc PC
 (
@@ -223,16 +236,19 @@ pc PC
   .rst_n              (resetn             ),
   .pc_flush_i         (exc_flag           ),
   .if_flush_i         (flush_id_o         ),     
-  .if_stall_i         (stall_pc_o         ), 
-  .icache_ask         (icache_ask         ), 
-  .icache_stall       (icache_stall       ),   
+  .if_stall_i         (stall_pc_o         ),  
+  .icache_axi_stall   (icache_axi_stall   ),
+  .icache_stall       (icache_stall       ),
   .branch_en          (if_branch_en       ),
 
   .flush_pc_i         (flush_pc_i         ),
   .branch_pc_i        (branch_pc_i        ),
-  .inst_i             (icache_bus_rdata    ),     
+  .uc_inst_i          (icache_bus_rdata   ),     
   .if_inslot_i        (if_in_delay_slot_i ),
   .if_pc_i            (if_pc_i            ),
+
+  .cache_inst_i       (icache_inst),
+  .cache_valid_i      (icache_data_valid),
 
   .inst_sram_en       (icache_bus_en       ),  
   .if_pc_o            (id_pc_i            ),    
@@ -252,14 +268,19 @@ mmu IMMU
 (
   .en       (icache_bus_en),
   .vaddr    (if_bus_vaddr),
-  .paddr    (icache_bus_addr)
+  .paddr    (icache_bus_addr),
+  .cached   (icache_cached),
+  .ConfigK0 (ConfigK0_o)
 );
+
+assign ibus_cached = icache_cached;
+assign cpu_virtual_addr_o = if_bus_vaddr;
+
 
 decoder DECODER
 (
   .clk                (clk                ),
   .rst_n              (resetn             ),
-  .if_flush_i         (flush_id_o         ),
   .id_flush_i         (flush_ex_o         ),
   .id_stall_i         (stall_id_o         ), 
 
@@ -447,8 +468,12 @@ mmu DMMU
 (
   .en       (dcache_bus_en),
   .vaddr    (ex_bus_vaddr),
-  .paddr    (dcache_bus_addr)
+  .paddr    (dcache_bus_addr),
+  .cached   (dcache_cached),
+  .ConfigK0 (ConfigK0_o)
 );
+
+assign dbus_cached = dcache_cached;
 
 alu ALU
 (
@@ -531,6 +556,7 @@ cp0 CP0
   .Cause_o            (),
   .EPC_o              (exc_EPC_i),
   .Config_o           (),
+  .ConfigK0_o         (ConfigK0_o),
   .ErrorEPC_o         (),
   .exc_intr           (exc_intr_i)//标记产生中断
 );
@@ -560,6 +586,7 @@ mem MEM
   .mem_flush_i        (flush_wb_o ),  
 
   .mem_s2_stallreq_i  (mdu_s2_stallreq_o),
+  .dcache_axi_stall_i     (),
   .mem_inst_o         (wb_inst_i),
   .mem_inslot_o       (),
 
@@ -618,13 +645,15 @@ writeback WRITEBACK
 
 control control
 (
-  .streq_pc_i         (icache_stall),
+  .streq_pc_i         (icache_axi_stall),
   .streq_id_i         (streq_id_i),
   .streq_ex_i         (streq_ex_i),
   .streq_mem_i        (streq_mem_i),
   .streq_wb_i         (streq_wb_i),
   .exc_flag           (exc_flag),
-  .dcache_stall       (dcache_stall),
+  .dcache_axi_stall   (dcache_axi_stall),
+  .icache_stall_i     (icache_stall),
+  .dcache_stall_i     (dcache_stall),
 
   .stall_pc_o         (stall_pc_o),
   .stall_id_o         (stall_id_o),
@@ -632,7 +661,6 @@ control control
   .stall_mem_o        (stall_mem_o),
   .stall_wb_o         (stall_wb_o),
 
-  .flush_pc_o         (flush_pc_o),
   .flush_id_o         (flush_id_o),
   .flush_ex_o         (flush_ex_o),
   .flush_mem_o        (flush_mem_o),
@@ -641,7 +669,7 @@ control control
 );
 
 assign  ibus_stall = stall_pc_o;
-// assign  ibus_stall = dcache_stall;
+// assign  ibus_stall = dcache_axi_stall;
 //assign  dbus_stall = stall_ex_o;
 
 hilo HILO

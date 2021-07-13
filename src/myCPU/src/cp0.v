@@ -24,7 +24,8 @@ module cp0
 	output wire  [31: 0] Status_o,
 	output wire  [31: 0] Cause_o,
 	output wire  [31: 0] EPC_o,
-	output wire  [31: 0] Config_o,
+    output wire  [31: 0] Config_o,
+    output wire  [ 2: 0] ConfigK0_o,
 	output wire  [31: 0] ErrorEPC_o,
     output wire 		 exc_intr//标记产生中断
 );
@@ -429,5 +430,6 @@ module cp0
     assign EPC_o      = EPC;
     assign Config_o   = Config;
     assign ErrorEPC_o = ErrorEPC;
+    assign ConfigK0_o = Config[ 2: 0];
 
 endmodule

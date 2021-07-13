@@ -1,148 +1,122 @@
-`include "../defines.v"
+`include "defines_cache.v"
 
-module i_cache
-(
-    input  wire          aclk,
-    input  wire          aresetn,
-    output wire  [ 3: 0] arid,
-    output wire  [31: 0] araddr,
-    output wire  [ 3: 0] arlen,
-    output wire  [ 2: 0] arsize,
-    output wire  [ 1: 0] arburst,
-    output wire  [ 1: 0] arlock,
-    output wire  [ 3: 0] arcache,
-    output wire  [ 2: 0] arprot,                
-    output wire          arvalid,
-    input  wire          arready,
-    input  wire  [ 3: 0] rid,
-    input  wire  [31: 0] rdata,
-    input  wire  [ 1: 0] rresp,
-    input  wire          rlast,
-    input  wire          rvalid,
-    output wire          rready,
-    output wire  [ 3: 0] awid,
-    output wire  [31: 0] awaddr,
-    output wire  [ 3: 0] awlen,
-    output wire  [ 2: 0] awsize,
-    output wire  [ 1: 0] awburst,
-    output wire  [ 1: 0] awlock,
-    output wire  [ 3: 0] awcache,
-    output wire  [ 2: 0] awprot,
-    output wire          awvalid,
-    input  wire          awready,
-    output wire  [ 3: 0] wid,
-    output wire  [31: 0] wdata,
-    output wire  [ 3: 0] wstrb,
-    output wire          wlast,
-    output wire          wvalid,
-    input  wire          wready,
-    input  wire [ 3: 0]  bid,
-    input  wire [ 1: 0]  bresp,
-    input  wire          bvalid,
-    output wire          bready,
+module icache(
 
-    input  wire          bus_en,
-    input  wire [ 3: 0]  bus_wen,
-    input  wire [31: 0]  bus_addr,
-    output wire [31: 0]  bus_rdata,
-    input  wire [31: 0]  bus_wdata,
-    //output wire          bus_streq,
-    input  wire          bus_stall,
-    //input  wire          bus_cached,
-
-    input  wire [ 3: 0]  status_in, 
-    input  wire [31: 0]  req_addr_in, 
-    output wire [ 3: 0]  status_out, 
-    output wire [31: 0]  req_addr_out, 
-    output wire          icache_stall,
-    output wire          icache_ask//申请事务
-
-    //input  wire [`COP ]  cacheop,
-    //input  wire [31: 0]  cop_dtag
-);
-    reg [31: 0]        read_data;
-    assign bus_rdata = read_data;
-
-    assign arid     = 4'b0;
-    assign arlen    = 4'b0;
-    assign arsize   = 3'b010;
-    assign arburst  = 2'b01;
-    assign arlock   = 2'b0;
-    assign arcache  = 4'b0;
-    assign arprot   = 3'b0;
-
-    assign awid     = 4'b0;
-    assign awlen    = 4'b0;
-    assign awsize   = 3'b010;
-    assign awburst  = 2'b01;
-    assign awlock   = 2'b0;
-    assign awcache  = 4'b0;
-    assign awprot   = 3'b0;
-    assign awvalid  = 1'b0;
-
-    assign wid      = 4'b0;
-    assign wvalid   = 0;
-    assign wlast    = 1'b1;
-    assign wstrb    = 4'b0;
-    assign wdata    = 0;
-
-    assign bready   = 1'b1;
-
-    assign rready   = 1'b1;
-
-
-//axi logic
-    parameter IDLE          = 4'b0001;
-    parameter READ_REQUEST  = 4'b0010;
-    parameter READ_TRANSFER = 4'b0100;
-    parameter READ_END      = 4'b1000;
-
-
-    wire [ 3: 0] status;
-    wire [ 3: 0] status_next;
-    wire [31: 0] req_addr_next;
-    wire [31: 0] req_addr;
-    wire         read_req;
-    wire         read_addr_handshake;
-    wire         read_handshake;
-
-    assign read_req =  !bus_stall & ((status_in[0] | status_in[3] | status_in == 0) & bus_en);
-    //assign read_req = (status_in[0] | status_in == 0) & bus_en & (| bus_wen);
-    assign araddr   = read_req ? bus_addr : req_addr_in;
-    assign arvalid  = read_req | status_in[1];
-    assign read_addr_handshake = arvalid & arready;
-    assign read_handshake      = rvalid & rready;
-
-    assign awaddr = bus_addr;
-
-    assign status_next = (status_in[0] | status_in == 0) && read_req  ? READ_REQUEST  :
-                         status_in[1] && !read_addr_handshake         ? READ_REQUEST  :
-                         status_in[1] && read_addr_handshake          ? READ_TRANSFER :
-                         status_in[2] && !(rlast & read_handshake)    ? READ_TRANSFER :
-                         status_in[2] && (rlast & read_handshake)     ? READ_END      :
-                         status_in[3] && read_req                     ? READ_REQUEST  :
-                         status_in[3] && !read_req                    ? IDLE          :
-                         4'b0001;
-    assign req_addr_next = read_req ? bus_addr : req_addr_in;
-
-    DFFRE #(.WIDTH(4))      stat_next           (.d(status_next), .q(status_out), .en(1), .clk(aclk), .rst_n(aresetn));
-    DFFRE #(.WIDTH(32))     req_next            (.d(req_addr_next), .q(req_addr_out), .en(1), .clk(aclk), .rst_n(aresetn));
-   
-
-   //assign icache_stall = read_req | status_in[1] | (status_in[2] && !(rlast & read_handshake));
-   //assign icache_stall = (read_req & !status_in[3]) | status_in[1] | status_in[2] ;
-   assign icache_stall = status_in[1] | status_in[2] ;
-   assign icache_ask   = read_req;
-   
-
-   always @(posedge aclk, negedge aresetn) begin
-        if (!aresetn) begin
-            read_data <= 0;
-        end
-        else if (read_handshake) begin
-            read_data <= rdata;
-        end
-
-    end
+    input wire                  clk,
+    input wire                  rst_n,
     
-    endmodule
+    //from cpu 
+    input wire                  cpu_rreq_i,
+    //input wire [3:0]            cpu_wsel_i,
+    //input wire [`DataAddrBus]   cpu_wdata_i,
+    input wire                  cpu_cached_i,
+    input wire [`DataAddrBus]   cpu_virtual_addr_i,
+    input wire [`DataAddrBus]   cpu_physical_addr_i,
+    input wire                  cpu_bus_stall_i,
+
+    //from cache_axi
+    input  wire                 rend,//give this signal and data at the same time
+    input  wire [`WayBus]       cacheline_rdata_i,
+    //input  wire                 write_end,
+
+    //to cache_axi
+    output wire                 icache_rreq_o,
+    output wire [`DataAddrBus]  icache_raddr_o,
+    
+    //to cpu
+    output wire                 cpu_stall_o,
+    output wire [`DataAddrBus]  icache_rdata_o,
+    output wire                 icache_data_valid
+    );
+//s1 wires
+    wire [`DataAddrBus]  s1_virtual_addr_o;
+    wire [`DataAddrBus]  s1_physical_addr_o;
+    wire                 s1_cache_rreq_o;
+    wire [`TagVBus]      s1_tagv_cache_w0_o;
+    wire [`TagVBus]      s1_tagv_cache_w1_o;
+    wire                 s1_valid0_o;
+    wire                 s1_valid1_o;
+    wire                 s1_cached_o;
+    wire                 s1_install_o;
+    wire [`DataBus]      s1_data_way0_o;
+    wire [`DataBus]      s1_data_way1_o;
+    wire [`ICACHE_STATUS]    s1_s2_status_i;
+
+icache_s1 ICACHE_S1
+(
+    .clk(clk),
+    .rst_n(rst_n),
+
+    
+    .s1_rreq_i(cpu_rreq_i),
+    .s1_cached_i(cpu_cached_i),
+    .s1_virtual_addr_i(cpu_virtual_addr_i),
+    .s1_physical_addr_i(cpu_physical_addr_i),
+    .s1_bus_stall_i(cpu_bus_stall_i),
+
+    .old_virtual_addr_i(s1_virtual_addr_o),
+    .old_physical_addr_i(s1_physical_addr_o),
+
+    
+    .s1_rend_i(rend),
+    .s1_cacheline_rdata_i(cacheline_rdata_i),
+    
+    
+    .icache_stall_i(cpu_stall_o),
+    .s1_hit1_i(s1_hit1_i),
+    .s1_hit2_i(s1_hit2_i),
+    .s1_s2rreq_i(s1_s2rreq_i),
+    .s1_s2_status_i(s1_s2_status_i),
+
+    
+    .s1_virtual_addr_o(s1_virtual_addr_o),
+    .s1_physical_addr_o(s1_physical_addr_o),
+    .s1_cache_rreq_o(s1_cache_rreq_o),
+    .s1_tagv_cache_w0_o(s1_tagv_cache_w0_o),
+    .s1_tagv_cache_w1_o(s1_tagv_cache_w1_o),
+    .s1_valid0_o(s1_valid0_o),
+    .s1_valid1_o(s1_valid1_o),
+    .s1_cached_o(s1_cached_o),
+    .s1_install_o(s1_install_o),
+
+    .s1_data_way0_o(s1_data_way0_o),
+    .s1_data_way1_o(s1_data_way1_o)     
+);
+
+icache_s2 ICACHE_S2
+(
+    .clk(clk),
+    .rst_n(rst_n),
+    
+    .s2_virtual_addr_i(s1_virtual_addr_o),
+    .s2_physical_addr_i(s1_physical_addr_o),
+    .s2_cache_rreq_i(s1_cache_rreq_o),
+    .s2_tagv_cache_w0_i(s1_tagv_cache_w0_o),
+    .s2_tagv_cache_w1_i(s1_tagv_cache_w1_o),
+    .s2_valid0_i(s1_valid0_o),
+    .s2_valid1_i(s1_valid1_o),
+    .s2_cached_i(s1_cached_o),
+    .s2_install_i(s1_install_o),
+
+    .s2_data_way0_i(s1_data_way0_o),
+    .s2_data_way1_i(s1_data_way1_o), 
+
+    .s2_rend_i(rend),
+    .s2_cacheline_rdata_i(cacheline_rdata_i),
+    
+    .s2_status_o(s1_s2_status_i),
+    
+    .s2_axi_req_o(icache_rreq_o),
+    .s2_addr_o(icache_raddr_o),
+    
+    .icache_stall_o(cpu_stall_o),
+    .s2_hit1_o(s1_hit1_i),
+    .s2_hit2_o(s1_hit2_i),
+    .s2_rreq_o(s1_s2rreq_i),
+
+    .s2_rdata_o(icache_rdata_o),
+    .icache_data_valid(icache_data_valid)
+);
+    
+
+endmodule

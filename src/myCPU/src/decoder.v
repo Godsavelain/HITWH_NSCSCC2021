@@ -4,7 +4,6 @@ module decoder
 (
 	input wire				clk,
 	input wire				rst_n,
-	input wire 				if_flush_i,
 	input wire 				id_flush_i,			//from controller
 	input wire				id_stall_i,	
 
@@ -223,7 +222,6 @@ module decoder
     wire        inst_syscall;
 	wire        inst_syscall_0;
 
-    //assign id_inst 		= if_flush_i ? 0 : id_inst_i;
     assign id_inst 		= id_inst_i;
 
     assign opcode    	= id_inst[31:26];

@@ -1,3 +1,5 @@
+//`include "defines_cache.v"
+
 module mycpu_top
 (
     input  wire [ 5: 0] ext_int,
@@ -45,8 +47,6 @@ module mycpu_top
     output wire [ 4: 0] debug_wb_rf_wnum,
     output wire [31: 0] debug_wb_rf_wdata
 );
-
-
 
     wire  [ 3: 0] icache_arid;
     wire  [31: 0] icache_araddr;
@@ -96,6 +96,7 @@ module mycpu_top
  
     wire [ 3: 0]  icache_status_out;
     wire [31: 0]  req_addr_in; 
+    wire          icache_axi_stall;
     wire          icache_stall;
     wire          icache_ask;
     
@@ -149,9 +150,24 @@ module mycpu_top
     wire          dcache_bus_cached;
 
     wire [`DCACHE_STATS]  dcache_status_out; 
+    wire                  dcache_axi_stall;
     wire                  dcache_stall;
     wire                  ibus_stall;
     //wire                  dbus_stall;
+
+    wire                  ibus_cached;
+    wire [31: 0]          cpu_virtual_addr_i;
+    wire                  icache_axi_req_i;
+    wire [31: 0]          icache_axi_addr_i;
+    wire                  icache_axi_rend;
+    wire [`WayBus]        icache_axi_data_o;
+    wire [31: 0]          icache_rdata_o;
+    wire                  icache_data_valid;
+
+    wire                  dcache_active;//dcache is working
+
+//dcache axi and dcache
+    wire                  dbus_cached;
 
 mycpu_core_top MY_TOP
 (
@@ -159,9 +175,10 @@ mycpu_core_top MY_TOP
   .resetn           (aresetn),
   .ext_int          (ext_int),
 
-  .icache_stall     (icache_stall),
-  .dcache_stall     (dcache_stall),
-  .icache_ask       (icache_ask),
+  .icache_axi_stall     (icache_axi_stall),
+  .dcache_axi_stall     (dcache_axi_stall),
+  .icache_stall         (icache_stall),
+  .dcache_stall         (dcache_stall),
   .ibus_stall       (ibus_stall),
   //.dbus_stall       (dbus_stall),
 
@@ -170,8 +187,12 @@ mycpu_core_top MY_TOP
   .icache_bus_wen   (icache_bus_wen),
   .icache_bus_addr  (icache_bus_addr),
   .icache_bus_wdata (icache_bus_wdata),
-  .icache_bus_rdata (icache_bus_rdata), 
+  .icache_bus_rdata (icache_bus_rdata), //data from icache_axi
 
+  .icache_inst      (icache_rdata_o),
+  .icache_data_valid(icache_data_valid),
+  .ibus_cached      (ibus_cached),
+  .cpu_virtual_addr_o(cpu_virtual_addr_i),
 
   .dcache_bus_en    (dcache_bus_en),
   .dcache_bus_wen   (dcache_bus_wen),
@@ -191,7 +212,7 @@ mycpu_core_top MY_TOP
 
 
 
-i_cache ICACHE
+icache_axi ICACHE_AXI
 (
     .aclk                   (aclk),
     .aresetn                (aresetn),
@@ -243,12 +264,40 @@ i_cache ICACHE
     .req_addr_in            (req_addr_in),
     .status_out             (icache_status_out), 
     .req_addr_out           (req_addr_in),
-    .icache_stall           (icache_stall),
-    .icache_ask             (icache_ask)
+    .icache_axi_stall       (icache_axi_stall),
 
+    .bus_cached             (ibus_cached),
+    .icache_axi_req_i       (icache_axi_req_i),
+    .icache_axi_addr_i      (icache_axi_addr_i),   
+    .dcache_active          (dcache_axi_stall),
+    .icache_axi_rend        (icache_axi_rend),
+    .icache_axi_data_o      (icache_axi_data_o)
 );
 
-d_cache DCACHE
+
+icache ICACHE
+(
+    .clk                    (aclk),
+    .rst_n                  (aresetn),
+     
+    .cpu_rreq_i             (icache_bus_en),
+    .cpu_cached_i           (ibus_cached),
+    .cpu_virtual_addr_i     (cpu_virtual_addr_i),
+    .cpu_physical_addr_i    (icache_bus_addr),
+    .cpu_bus_stall_i        (ibus_stall),
+    
+    .rend                   (icache_axi_rend),
+    .cacheline_rdata_i      (icache_axi_data_o),
+    
+    .icache_rreq_o          (icache_axi_req_i),
+    .icache_raddr_o         (icache_axi_addr_i),
+    
+    .cpu_stall_o            (icache_stall),
+    .icache_rdata_o         (icache_rdata_o),
+    .icache_data_valid      (icache_data_valid)
+);
+
+dcache_axi DCACHE_AXI
 (
     .aclk                    (aclk),
     .aresetn                 (aresetn),
@@ -300,7 +349,9 @@ d_cache DCACHE
 
     .status_in               (dcache_status_out), 
     .status_out              (dcache_status_out), 
-    .dcache_stall            (dcache_stall)
+    .dcache_axi_stall        (dcache_axi_stall),
+
+    .bus_cached              (dbus_cached)
 
 );
 
