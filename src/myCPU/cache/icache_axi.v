@@ -194,7 +194,7 @@ module icache_axi
         if(!aresetn ) begin
             counter <= 0;                 
         end
-        else if(rlast)
+        else if(rlast & read_handshake)
         begin
             counter <= 0;
         end

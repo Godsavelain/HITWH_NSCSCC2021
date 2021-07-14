@@ -273,6 +273,7 @@ mmu IMMU
   .ConfigK0 (ConfigK0_o)
 );
 
+//assign ibus_cached = 1;
 assign ibus_cached = icache_cached;
 assign cpu_virtual_addr_o = if_bus_vaddr;
 

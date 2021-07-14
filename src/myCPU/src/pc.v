@@ -81,9 +81,9 @@ assign pc_next 		=  !rst_n	? 32'hbfbffffc		:
 
 assign if_next_pc_o =  	//!rst_n	? 32'hbfc00000:
 						!rst_n	? 32'hbfbffffc		:
-						icache_streq ? if_pc_i		:
-						(pc_flush_i & !icache_streq) ? flush_pc_i		:
-						(branch_en & !icache_streq) ? branch_pc_i		:
+						icache_streq | if_stall_i ? if_pc_i		:
+						(pc_flush_i & !(icache_streq | if_stall_i)) ? flush_pc_i		:
+						(branch_en & !(icache_streq | if_stall_i) ) ? branch_pc_i		:
 						use_exc_pc_reg ? exc_pc_reg :
 						use_branch_pc_reg ? branch_pc_reg :
 						//pre_in_en 	  ? if_pc_i + 4 :						
