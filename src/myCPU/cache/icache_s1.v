@@ -103,15 +103,44 @@ module icache_s1(
         .dina(cache_wdata[7]),.clkb(clk),.addrb(virtual_index),.doutb(way1_cache[7]));                        
 
     //Tag
+    wire [31: 0] tag0;
+    wire [31: 0] tag1;
+    wire [31: 0] tag_in;
+
+    assign s1_tagv_cache_w0_o = tag0[`TagBus];
+    assign s1_tagv_cache_w1_o = tag1[`TagBus];
+    assign tag_in            = {old_physical_addr_i[`TagBus], 11'b0};
+
     simple_dual_ram TagV0 (.clka(clk),.ena(|wea_way0),.wea(wea_way0),
-        .addra(old_virtual_addr_i[`IndexBus]), .dina({old_physical_addr_i[`TagBus]}),
-        .clkb(clk),.addrb(virtual_index),.doutb(s1_tagv_cache_w0_o));
+        .addra(old_virtual_addr_i[`IndexBus]), .dina(tag_in),
+        .clkb(clk),.addrb(virtual_index),.doutb(tag0));
 
     simple_dual_ram TagV1 (.clka(clk),.ena(|wea_way1),.wea(wea_way1),
-        .addra(old_virtual_addr_i[`IndexBus]), .dina({old_physical_addr_i[`TagBus]}),
-        .clkb(clk),.addrb(virtual_index),.doutb(s1_tagv_cache_w1_o)); 
+        .addra(old_virtual_addr_i[`IndexBus]), .dina(tag_in),
+        .clkb(clk),.addrb(virtual_index),.doutb(tag1)); 
 
-    //Valid
+    //hit judgement
+    wire hit_success = (s1_hit1_i | s1_hit2_i) & s1_s2rreq_i;//hit & req valid
+    wire hit_fail = ~(hit_success) & (s1_s2rreq_i);   
+
+    //LRU
+    reg [`SetBus]LRU;
+    wire LRU_pick = LRU[old_virtual_addr_i[`IndexBus]];
+    always@(posedge clk)begin
+        if(!rst_n)
+            LRU <= 0;
+        else if(hit_success == `HitSuccess)//hit: set LRU to bit that is not hit
+            LRU[old_virtual_addr_i[`IndexBus]] <= s1_hit1_i;
+            //LRU_pick = 1, the way0 is used recently, the way0 is picked 
+            //LRU_pick = 0, the way1 is used recently, the way1 is picked 
+        else if(s1_rend_i == 1 && hit_fail == `Valid)//not hit: set opposite LRU
+            LRU[old_virtual_addr_i[`IndexBus]] <= ~LRU_pick;
+        else
+            LRU <= LRU;
+    end
+
+
+        //Valid
     reg  [63: 0] ca_valid0 ; 
     reg  [63: 0] ca_valid1 ;
     assign valid0 = ca_valid0[virtual_index];
@@ -134,22 +163,6 @@ module icache_s1(
         end
             
     end
-
-    //LRU
-    reg [`SetBus]LRU;
-    wire LRU_pick = LRU[old_virtual_addr_i[`IndexBus]];
-    always@(posedge clk)begin
-        if(!rst_n)
-            LRU <= 0;
-        else if(hit_success == `HitSuccess)//hit: set LRU to bit that is not hit
-            LRU[old_virtual_addr_i[`IndexBus]] <= s1_hit1_i;
-            //LRU_pick = 1, the way0 is used recently, the way0 is picked 
-            //LRU_pick = 0, the way1 is used recently, the way1 is picked 
-        else if(s1_rend_i == 1 && hit_fail == `Valid)//not hit: set opposite LRU
-            LRU[old_virtual_addr_i[`IndexBus]] <= ~LRU_pick;
-        else
-            LRU <= LRU;
-    end
     
 
     wire[ 2: 0] bank;
@@ -160,9 +173,7 @@ module icache_s1(
 //////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Main Operation////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-    //hit judgement
-    wire hit_success = (s1_hit1_i | s1_hit2_i) & s1_s2rreq_i;//hit & req valid
-    wire hit_fail = ~(hit_success) & (s1_s2rreq_i);      
+   
 
    //write to ram
     assign wea_way0 = ((s1_s2_status_i == `ICACHE_READ) && s1_rend_i == 1 && LRU_pick == 1'b0)? 4'b1111 : 4'h0;   
@@ -214,6 +225,7 @@ module icache_s1(
 
 
 
+    wire en;
     assign en = !stall;
 
 

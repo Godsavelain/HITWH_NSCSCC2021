@@ -115,8 +115,8 @@ module decoder
 	wire        src1_is_sa;
 	wire        src1_is_pc;
 	wire        src2_is_8;
-	wire 		src2_is_imm_s;//有符号扩�?
-	wire 		src2_is_imm_u;//无符号扩�?
+	wire 		src2_is_imm_s;//æœ‰ç¬¦å·æ‰©å±?
+	wire 		src2_is_imm_u;//æ— ç¬¦å·æ‰©å±?
 	wire		src2_is_joffset;
 
 	wire [ 5: 0] opcode;
@@ -470,12 +470,23 @@ module decoder
 	//for branch outputs
 	wire [31: 0] j_target;	//j and jal
     wire [31: 0] b_target;	//branch target
+
+    wire LZ;     // Less Than Zero
+    wire GEZ;    // Greater Than or Equal to Zero
+    wire LEZ;    // Less Than or Equal to Zero
+    wire GZ;     // Greater Than Zero
+    wire EQ;     // Equal
+    wire NEQ;    // Not Equal
+
+    wire [31: 0] 	branch_opr1;
+	wire [31: 0] 	branch_opr2;
+	
     assign j_target  		= {pcp4[31:28], j_offset, 2'b00};
     assign b_target  		= pcp4 + {sign_ext[29: 0], 2'b00};
 
-    wire inst_branch_b;		//转移地址为b_target
-    wire inst_branch_j;		//转移地址为j_target
-    wire inst_branch_rs;	//转移地址为rs
+    wire inst_branch_b;		//è½¬ç§»åœ°å€ä¸ºb_target
+    wire inst_branch_j;		//è½¬ç§»åœ°å€ä¸ºj_target
+    wire inst_branch_rs;	//è½¬ç§»åœ°å€ä¸ºrs
     assign inst_branch_b	= inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
     						| inst_bgezal | inst_bltzal ;
     assign inst_branch_j	= inst_j   | inst_jal;
@@ -485,16 +496,8 @@ module decoder
     						  inst_branch_j ? j_target :
     						  branch_opr1;
     assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo | inst_mfc0;
- 	wire LZ;     // Less Than Zero
-    wire GEZ;    // Greater Than or Equal to Zero
-    wire LEZ;    // Less Than or Equal to Zero
-    wire GZ;     // Greater Than Zero
-    wire EQ;     // Equal
-    wire NEQ;    // Not Equal
 
 
-	wire [31: 0] 	branch_opr1;
-	wire [31: 0] 	branch_opr2;
 	assign branch_opr1 = id_ex_res_as1_i ? id_res_from_ex_i : raw_data1_i;
 	assign branch_opr2 = id_ex_res_as2_i ? id_res_from_ex_i : raw_data2_i;
     assign LZ     = branch_opr1[31];               
@@ -553,7 +556,7 @@ DFFRE #(.WIDTH(1))			pcvalid_next		(.d(id_pcvalid_next), .q(id_pcvalid_o), .en(e
 
 
 
-//尚未实现
+//å°šæœªå®žçŽ°
 
 assign 				id_tlbop_next = 0;
 assign 				id_cacheop_next = 0;

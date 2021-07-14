@@ -31,8 +31,8 @@ module mem
 	input wire			dcache_axi_stall_i,	
 
 	output wire [31: 0]	mem_inst_o,
-	output wire 		mem_inslot_o,
-	output wire 		mem_memop_o,
+	//output wire 		mem_inslot_o,
+	//output wire 		mem_memop_o,
 
 	output wire [ 4: 0]	mem_waddr_o,
     output wire [31: 0]	mem_wdata_o,
@@ -111,7 +111,7 @@ module mem
 
 
 	wire [31: 0] 	mem_inst_next;
-	wire 			mem_inslot_next;
+	//wire 			mem_inslot_next;
 	wire [ 4: 0]	mem_waddr_next;
 	wire [31: 0]	mem_wdata_next;
 	wire [ 3: 0]	mem_wren_next;
@@ -143,7 +143,7 @@ module mem
 	// 				   0001 ;
 
 	assign  mem_inst_next  		= mem_flush_i ? 0 :mem_inst_i;
-	assign  mem_inslot_next		= mem_flush_i ? 0 :mem_inslot_i;
+	//assign  mem_inslot_next		= mem_flush_i ? 0 :mem_inslot_i;
 	assign  mem_waddr_next 		= mem_flush_i ? 0 :mem_waddr_i;
 	assign  mem_wdata_next 		= mem_flush_i ? 0 :mem_c0_ren_i ? mem_c0data_i :mem_inst_load_i ? load_res :
 								  mem_wdata_i;
@@ -158,7 +158,7 @@ module mem
 
 
 DFFRE #(.WIDTH(32))		inst_next				(.d(mem_inst_next), .q(mem_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))		inslot_next				(.d(mem_inslot_next), .q(mem_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
+//DFFRE #(.WIDTH(1))		inslot_next				(.d(mem_inslot_next), .q(mem_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(5))		waddr_next				(.d(mem_waddr_next), .q(mem_waddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		wdata_next				(.d(mem_wdata_next), .q(mem_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(4))		wren_next				(.d(mem_wren_next), .q(mem_wren_o), .en(en), .clk(clk), .rst_n(rst_n));

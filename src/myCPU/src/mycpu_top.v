@@ -34,7 +34,7 @@ module mycpu_core_top
   output wire [ 1: 0]        dcache_bus_store_size,
   output wire [ 1: 0]        dcache_bus_load_size,
 
-  output wire                dbus_cached,
+  //output wire                dbus_cached,
 
   //debug
   output wire [31: 0]        debug_wb_pc,
@@ -587,9 +587,9 @@ mem MEM
   .mem_flush_i        (flush_wb_o ),  
 
   .mem_s2_stallreq_i  (mdu_s2_stallreq_o),
-  .dcache_axi_stall_i     (),
+  .dcache_axi_stall_i (0),
   .mem_inst_o         (wb_inst_i),
-  .mem_inslot_o       (),
+  //.mem_inslot_o       (),
 
   .mem_waddr_o        (wb_waddr_i),
   .mem_wdata_o        (wb_wdata_i),

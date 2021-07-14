@@ -102,8 +102,6 @@ module regfile
     assign lrdata2[31:24] = r2_wb_haz4 ? wdata[31:24] : GPR[raddr2][31:24];
 
 
-    assign branch_stall   = id_is_branch && ex_haz ;
-
 //bypass
     assign rdata1 = raddr1 == 0 ? 0         :
                     r1_ex_haz   ? ex_wdata  :
@@ -123,6 +121,8 @@ module regfile
     wire   ex_haz    = (r1_ex_haz  && r1_rvalid) || (r2_ex_haz  && r2_rvalid);
     wire   mem_haz   = (r1_mem_haz && r1_rvalid) || (r2_mem_haz && r2_rvalid);
     assign stallreq  = (ex_haz     && ex_nofwd ) || (mem_haz    && mem_nofwd) || branch_stall;
+
+    assign branch_stall   = id_is_branch && ex_haz ;
 
 
 //当ID段为branch且与EX段存在相关时暂停一拍，将旁路数据与控制信号送往ID段，下一周期ID段再根据送入数据进行分支地址计算

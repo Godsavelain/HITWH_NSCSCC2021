@@ -138,6 +138,8 @@ module execute
 	wire 	op_swl;
 	wire 	op_swr;
 
+	wire [ 1: 0]  ex_memaddr_low;
+
 	assign  ov				= ex_aluov_i & ex_ov_inst_i;
 
 	assign	opr_lt			= $signed(ex_opr1_i) < $signed(ex_opr2_i);
@@ -196,7 +198,7 @@ module execute
 	assign ex_nofwd_bp_o	= ex_nofwd_i;
 
 //for mem
-	wire [ 1: 0]  ex_memaddr_low; 						//地址�?末两�?
+ 						
 	wire [ 3: 0]  ex_memwen_sb;
 	wire [ 3: 0]  ex_memwen_sh;
 	wire [ 3: 0]  ex_memwen_swl;

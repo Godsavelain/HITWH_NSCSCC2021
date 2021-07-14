@@ -103,12 +103,13 @@ module icache_s2(
     assign s2_rreq_o    = s2_cache_rreq_i;
 
     //to cpu
+    reg [`DataBus] read_data;//data to be sent to cpu when read transfer ends
     assign icache_data_valid = s2_cached_i;
     assign s2_rdata_o   = hit1 ? s2_data_way0_i :
                           hit2 ? s2_data_way1_i :
                           read_data;
  
-    reg [`DataBus] read_data;//data to be sent to cpu when read transfer ends
+
     wire [ 2: 0] choose;
     assign choose = s2_physical_addr_i[4:2];
 

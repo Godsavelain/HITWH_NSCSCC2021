@@ -41,6 +41,8 @@ module exception
     //assign  flush_pc_o  = excs[`Exc_ERET  ] ? exc_EPC_i-4 :32'hBFC0_037c;
     assign  flush_pc_o  = excs[`Exc_ERET  ] ? exc_EPC_i  :32'hBFC0_0380;
 
+    assign exc_cpun_o = 0;
+
 
 
 endmodule
