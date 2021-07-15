@@ -118,7 +118,6 @@ module mem
 	wire 			mem_nofwd_next;
 	wire 			mem_memop_next;
 	wire [31: 0]	mem_pc_next;
-	wire 			mem_mduinst_next;
 
 	wire [ 3: 0]	lwl_wren;
 	wire [ 3: 0]	lwr_wren;
@@ -163,7 +162,6 @@ DFFRE #(.WIDTH(5))		waddr_next				(.d(mem_waddr_next), .q(mem_waddr_o), .en(en),
 DFFRE #(.WIDTH(32))		wdata_next				(.d(mem_wdata_next), .q(mem_wdata_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(4))		wren_next				(.d(mem_wren_next), .q(mem_wren_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))		pc_next					(.d(mem_pc_next), .q(mem_pc_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))		mduinst_next			(.d(mem_mduinst_next), .q(mem_mduinst_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 assign mem_stall_o = mem_s2_stallreq_i;

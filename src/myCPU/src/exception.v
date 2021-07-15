@@ -25,15 +25,15 @@ module exception
     assign  excs [`Exc_Intr   ]  = exc_intr_i && ~exc_mem_en_i && exc_pcvalid_i;
     assign  exc_flag_o 			     = exc_type_o != 0;
 
-    assign  exc_type_o  			 = excs[`Exc_Intr  ] ? `ExcT_Intr :
-            					           excs[`Exc_AdEL1 ] ? `ExcT_AdEL1:
-                                 excs[`Exc_AdEL2 ] ? `ExcT_AdEL2:
-                                 excs[`Exc_AdES  ] ? `ExcT_AdES :
-            					           excs[`Exc_Ov    ] ? `ExcT_Ov   :
-            					           excs[`Exc_SysC  ] ? `ExcT_SysC :
-            					           excs[`Exc_Bp    ] ? `ExcT_Bp   :
-            					           excs[`Exc_RI    ] ? `ExcT_RI   :            					   
-            					           excs[`Exc_ERET  ] ? `ExcT_ERET : `ExcT_NoExc;
+    assign  exc_type_o  			 =  excs[`Exc_Intr  ] ? `ExcT_Intr :
+            					        excs[`Exc_AdEL1 ] ? `ExcT_AdEL1:
+                                        excs[`Exc_AdEL2 ] ? `ExcT_AdEL2:
+                                        excs[`Exc_AdES  ] ? `ExcT_AdES :
+            					        excs[`Exc_Ov    ] ? `ExcT_Ov   :
+            					        excs[`Exc_SysC  ] ? `ExcT_SysC :
+            					        excs[`Exc_Bp    ] ? `ExcT_Bp   :
+            					        excs[`Exc_RI    ] ? `ExcT_RI   :            					   
+            					        excs[`Exc_ERET  ] ? `ExcT_ERET : `ExcT_NoExc;
 
     assign  exc_baddr_o = excs[`Exc_AdEL1] ? exc_pc_i :
                           excs[`Exc_AdEL2] | excs[`Exc_AdES] ? exc_m_addr_i : 0;

@@ -22,7 +22,10 @@ module icache_s2(
     //from axi
     input wire                 s2_rend_i,
     input wire [`WayBus]       s2_cacheline_rdata_i,
-    
+
+    //from cpu
+    //input wire                 s2_cpuvalid_i,
+
     //cache state
     output wire [`ICACHE_STATUS] s2_status_o,
     
@@ -39,6 +42,8 @@ module icache_s2(
     //to cpu
     output wire [`DataAddrBus]   s2_rdata_o,
     output wire                  icache_data_valid//data com from cached channel
+
+
     );
     
 //////////////////////////////////////////////////////////////////////////////////
@@ -47,6 +52,21 @@ module icache_s2(
     
     
     //keep input data
+    reg use_readdata;
+        always@(posedge clk)begin
+        if(!rst_n)begin
+            use_readdata    <= 0;
+        end
+        else if(s2_rend_i)begin
+            use_readdata    <= 1;
+        end
+        else if(use_readdata==1)begin
+            use_readdata    <= 0;
+        end
+        
+    end
+
+
     reg [`TagVBus]      tagv_cache_w0;
     reg [`TagVBus]      tagv_cache_w1;
 
@@ -105,7 +125,8 @@ module icache_s2(
     //to cpu
     reg [`DataBus] read_data;//data to be sent to cpu when read transfer ends
     assign icache_data_valid = s2_cached_i;
-    assign s2_rdata_o   = hit1 ? s2_data_way0_i :
+    assign s2_rdata_o   = (use_readdata == 1 )? read_data: 
+                          hit1 ? s2_data_way0_i :
                           hit2 ? s2_data_way1_i :
                           read_data;
  

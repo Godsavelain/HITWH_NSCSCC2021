@@ -7,7 +7,7 @@ module pc
 	input wire 				if_flush_i,			//from controller
 	input wire 				pc_flush_i,
 	input wire				if_stall_i,			//from controller
-	input wire 				icache_axi_stall,//icache 在等待数�?
+	input wire 				icache_axi_stall,//icache åœ¨ç­‰å¾…æ•°æ?
 	input wire 				icache_stall,
 	//input wire				usrmode,
 	input wire				branch_en,
@@ -123,7 +123,7 @@ always @(posedge clk, negedge rst_n) begin
 			use_branch_pc_reg <= 0;						
         end
         else begin
-        	if((branch_en & icache_streq)&(~if_stall_i))
+        	if((branch_en & icache_streq)&~if_stall_i)
         	begin
         		use_branch_pc_reg <= 1;
         		branch_pc_reg <= branch_pc_i;
@@ -137,7 +137,7 @@ always @(posedge clk, negedge rst_n) begin
 			use_exc_pc_reg <= 0;					
         end
         else begin
-        	if((pc_flush_i & icache_streq)&(~if_stall_i))
+        	if(pc_flush_i & ( icache_streq | if_stall_i ))
         	begin
         		exc_pc_reg <= flush_pc_i;
 				use_exc_pc_reg <= 1;

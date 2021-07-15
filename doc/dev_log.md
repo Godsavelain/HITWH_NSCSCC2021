@@ -1,4 +1,12 @@
-TO DO LIST:完成系统测试
+TO DO LIST：icache通过性能测试
+
+###### 2021.7.15
+
+* 通过添加use_readdata寄存器，解决了icache在AXI总线burst传输完成后，若下一个申请的数据正好hit时，会发送命中的数据而非read_data的问题
+
+* icache通过功能测试9个测试点，8号测试不过，但有读数
+
+  
 
 ###### 2021.7.14
 
