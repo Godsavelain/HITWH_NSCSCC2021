@@ -193,6 +193,7 @@ mycpu_core_top MY_TOP
   .icache_data_valid(icache_data_valid),
   .ibus_cached      (ibus_cached),
   .cpu_virtual_addr_o(cpu_virtual_addr_i),
+  .cpu_if_valid_o   (cpu_if_valid_o),
 
   .dcache_bus_en    (dcache_bus_en),
   .dcache_bus_wen   (dcache_bus_wen),
@@ -285,6 +286,7 @@ icache ICACHE
     .cpu_virtual_addr_i     (cpu_virtual_addr_i),
     .cpu_physical_addr_i    (icache_bus_addr),
     .cpu_bus_stall_i        (ibus_stall),
+    .cpu_if_valid_i         (cpu_if_valid_o),
     
     .rend                   (icache_axi_rend),
     .cacheline_rdata_i      (icache_axi_data_o),
@@ -295,6 +297,7 @@ icache ICACHE
     .cpu_stall_o            (icache_stall),
     .icache_rdata_o         (icache_rdata_o),
     .icache_data_valid      (icache_data_valid)
+                            
 );
 
 dcache_axi DCACHE_AXI

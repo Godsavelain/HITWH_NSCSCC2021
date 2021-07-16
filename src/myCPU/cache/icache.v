@@ -13,6 +13,7 @@ module icache(
     input wire [`DataAddrBus]   cpu_virtual_addr_i,
     input wire [`DataAddrBus]   cpu_physical_addr_i,
     input wire                  cpu_bus_stall_i,
+    input wire                  cpu_if_valid_i,
 
     //from cache_axi
     input  wire                 rend,//give this signal and data at the same time
@@ -115,7 +116,8 @@ icache_s2 ICACHE_S2
     .s2_rreq_o(s1_s2rreq_i),
 
     .s2_rdata_o(icache_rdata_o),
-    .icache_data_valid(icache_data_valid)
+    .icache_data_valid(icache_data_valid),
+    .s2_cpuvalid_i(cpu_if_valid_i)
 );
     
 

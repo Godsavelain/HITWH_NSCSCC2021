@@ -22,11 +22,13 @@ module pc
 	input  wire [31: 0] 	cache_inst_i,
 	input  wire 			cache_valid_i,
 
+	output wire 			if_valid_o,//not stalled (can receive new inst)
 	output wire [31: 0]		next_pc_o,
 	output wire				inst_sram_en,  
 	output wire [31: 0] 	if_pc_o,		//current pc
 	output wire [31: 0] 	if_next_pc_o,	//inst_sram_addr
 	output wire [31: 0]		if_inst_o,		//current inst
+
 	//output wire			if_stallreq_o,	//to controller
 	output wire				if_inslot_o,
 	output wire [`ExcE] 	if_excs_o,		//exceptions
@@ -106,6 +108,7 @@ assign en 			= 	~ if_stall_i;
 
 assign if_inslot_next = ( if_flush_i | use_exc_pc_reg ) ? 0 : (if_inslot_i | in_delay_slot);
 
+assign if_valid_o	= 	(~if_stall_i) & !if_flush_i;
 
 DFFRE #(.WIDTH(32))		pc_result_next			(.d(pc_next), .q(if_pc_o), .en(en), .clk(clk), .rst_n(1));
 DFFRE #(.WIDTH(1))		delayslot_result_next	(.d(if_inslot_next), .q(if_inslot_o), .en(en), .clk(clk), .rst_n(rst_n));

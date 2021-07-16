@@ -417,7 +417,7 @@ module decoder
 	assign id_ren2_o		= inst_add | inst_addu | inst_sub  | inst_subu  | inst_sra  | inst_sll
 							| inst_slt | inst_sltu | inst_div  | inst_divu  | inst_srl
 							| inst_mult| inst_multu| inst_and  | inst_nor   | inst_or
-							| inst_sllv| inst_srav | inst_srlv | inst_beq
+							| inst_sllv| inst_srav | inst_srlv | inst_beq	| inst_xor   |
 							| inst_bne | inst_sb   | inst_sh   | inst_sw    | inst_swl   | inst_swr| inst_mtc0 ;
 
  	assign id_wren_next 	= id_flush_i ? 0 : {4{~mul_div & ~inst_beq & ~inst_bne & ~inst_bgez & 

@@ -24,7 +24,7 @@ module icache_s2(
     input wire [`WayBus]       s2_cacheline_rdata_i,
 
     //from cpu
-    //input wire                 s2_cpuvalid_i,
+    input wire                 s2_cpuvalid_i,
 
     //cache state
     output wire [`ICACHE_STATUS] s2_status_o,
@@ -60,7 +60,7 @@ module icache_s2(
         else if(s2_rend_i)begin
             use_readdata    <= 1;
         end
-        else if(use_readdata==1)begin
+        else if(s2_cpuvalid_i)begin
             use_readdata    <= 0;
         end
         

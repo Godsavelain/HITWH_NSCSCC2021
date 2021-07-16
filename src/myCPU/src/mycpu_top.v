@@ -24,6 +24,7 @@ module mycpu_core_top
   input  wire                icache_data_valid,
   output wire                ibus_cached,
   output wire [31: 0]        cpu_virtual_addr_o,
+  output wire                cpu_if_valid_o,
 
   //to/from dcache_axi
   output wire                dcache_bus_en,
@@ -250,6 +251,7 @@ pc PC
   .cache_inst_i       (icache_inst),
   .cache_valid_i      (icache_data_valid),
 
+  .if_valid_o         (cpu_if_valid_o      ),
   .inst_sram_en       (icache_bus_en       ),  
   .if_pc_o            (id_pc_i            ),    
   .if_next_pc_o       (if_bus_vaddr        ), 
