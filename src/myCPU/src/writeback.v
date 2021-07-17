@@ -31,6 +31,11 @@ module writeback
 	output wire [ 3: 0]		wb_wren_o,
 	output wire [ 4: 0]		wb_waddr_o,
 	output wire [31: 0]		wb_wdata_o,
+	output wire [31: 0]		wb_wdata_raw_o,
+
+	//for id stall
+	input wire 				wb_inst_wb_nofwd_i,
+	output wire 			wb_inst_wb_nofwd_o,
 
 	//to hilo
 	output wire 			wb_whien_o,
@@ -57,12 +62,15 @@ module writeback
 	assign wb_wren_o			= wb_stallreq ? 0 : wb_wren_i;
 	assign wb_waddr_o			= wb_waddr_i;
 	assign wb_wdata_o  			= wb_wdata_final;
+	assign wb_wdata_raw_o 		= wb_wdata_i;
 
 	assign debug_wb_rf_wen 		= wb_stallreq ? 0 : wb_wren_i;
 	assign debug_wb_rf_wnum		= wb_stallreq ? 0 : wb_waddr_i;
 	assign debug_wb_rf_wdata	= wb_stallreq ? 0 : wb_wdata_final;
 
 	assign debug_wb_pc			= wb_stallreq ? 0 : wb_pc_i;
+
+	assign wb_inst_wb_nofwd_o 	= wb_inst_wb_nofwd_i;
 
 //to controller
 	assign wb_stallreq  		= 0;

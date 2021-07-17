@@ -68,7 +68,9 @@ module decoder
  	input  wire [31: 0]     raw_data1_i,  
     input  wire [31: 0]     raw_data2_i,
     input  wire 			id_pcvalid_i,
-    output wire 			id_pcvalid_o
+    output wire 			id_pcvalid_o,
+
+    output wire 			id_inst_wb_nofwd_o
 );
 
 //output signals
@@ -100,6 +102,8 @@ module decoder
     wire          		id_c0ren_next;
     wire [ 7: 0] 		id_c0addr_next;
     wire				id_pcvalid_next;
+
+    wire 				id_inst_wb_nofwd_next;
 
 
     wire [63: 0] op_d;
@@ -466,6 +470,7 @@ module decoder
 	assign id_c0ren_next 	= inst_mfc0;
 	assign id_c0addr_next 	= {id_inst_i[15:11],id_inst_i[2:0]};
 	assign id_pcvalid_next  = id_flush_i ? 0 : id_pcvalid_i;
+	assign id_inst_wb_nofwd_next = id_flush_i ? 0 : inst_mfhi | inst_mflo ;
 
 	//for branch outputs
 	wire [31: 0] j_target;	//j and jal
@@ -553,6 +558,7 @@ DFFRE #(.WIDTH(1))			has_exc_next		(.d(id_has_exc_next), .q(id_has_exc_o), .en(e
 DFFRE #(.WIDTH(1))			ov_inst_next		(.d(id_ov_inst_next), .q(id_ov_inst_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))			pcvalid_next		(.d(id_pcvalid_next), .q(id_pcvalid_o), .en(en), .clk(clk), .rst_n(rst_n));
 
+DFFRE #(.WIDTH(1))			inst_wb_nofwd_next	(.d(id_inst_wb_nofwd_next), .q(id_inst_wb_nofwd_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 

@@ -15,6 +15,7 @@ module regfile
 	input 	wire [ 3: 0]	we,
 	input 	wire [ 4: 0]	waddr,
 	input	wire [31: 0]	wdata,
+    input   wire [31: 0]    wdata_raw,//used for bypass
 	//for bypass
 	input 	wire [ 3: 0]	ex_wen,
 	input	wire [ 4: 0]	ex_waddr,
@@ -26,6 +27,8 @@ module regfile
 	//指令相关等需要暂停两周期
 	input	wire 			ex_nofwd,
 	input	wire 			mem_nofwd,
+    input   wire            inst_wb_nofwd,//with different meaning from ex/mem_nofwd
+                                          //mean that this instruction should get an extra stall when it has wb relevance
 	output  wire 			stallreq,
 
     //当ID为branch指令且存在数据冲突时暂停一拍
@@ -91,15 +94,15 @@ module regfile
 
     wire [31: 0] lrdata1;
     wire [31: 0] lrdata2;
-    assign lrdata1[ 7: 0] = r1_wb_haz1 ? wdata[ 7: 0] : GPR[raddr1][ 7: 0];
-    assign lrdata1[15: 8] = r1_wb_haz2 ? wdata[15: 8] : GPR[raddr1][15: 8];
-    assign lrdata1[23:16] = r1_wb_haz3 ? wdata[23:16] : GPR[raddr1][23:16];
-    assign lrdata1[31:24] = r1_wb_haz4 ? wdata[31:24] : GPR[raddr1][31:24];
+    assign lrdata1[ 7: 0] = r1_wb_haz1 ? wdata_raw[ 7: 0] : GPR[raddr1][ 7: 0];
+    assign lrdata1[15: 8] = r1_wb_haz2 ? wdata_raw[15: 8] : GPR[raddr1][15: 8];
+    assign lrdata1[23:16] = r1_wb_haz3 ? wdata_raw[23:16] : GPR[raddr1][23:16];
+    assign lrdata1[31:24] = r1_wb_haz4 ? wdata_raw[31:24] : GPR[raddr1][31:24];
 
-    assign lrdata2[ 7: 0] = r2_wb_haz1 ? wdata[ 7: 0] : GPR[raddr2][ 7: 0];
-    assign lrdata2[15: 8] = r2_wb_haz2 ? wdata[15: 8] : GPR[raddr2][15: 8];
-    assign lrdata2[23:16] = r2_wb_haz3 ? wdata[23:16] : GPR[raddr2][23:16];
-    assign lrdata2[31:24] = r2_wb_haz4 ? wdata[31:24] : GPR[raddr2][31:24];
+    assign lrdata2[ 7: 0] = r2_wb_haz1 ? wdata_raw[ 7: 0] : GPR[raddr2][ 7: 0];
+    assign lrdata2[15: 8] = r2_wb_haz2 ? wdata_raw[15: 8] : GPR[raddr2][15: 8];
+    assign lrdata2[23:16] = r2_wb_haz3 ? wdata_raw[23:16] : GPR[raddr2][23:16];
+    assign lrdata2[31:24] = r2_wb_haz4 ? wdata_raw[31:24] : GPR[raddr2][31:24];
 
 
 //bypass
@@ -120,7 +123,9 @@ module regfile
     wire   r2_rvalid = ren2 && (raddr2 != 0);
     wire   ex_haz    = (r1_ex_haz  && r1_rvalid) || (r2_ex_haz  && r2_rvalid);
     wire   mem_haz   = (r1_mem_haz && r1_rvalid) || (r2_mem_haz && r2_rvalid);
-    assign stallreq  = (ex_haz     && ex_nofwd ) || (mem_haz    && mem_nofwd) || branch_stall;
+    wire   wb_haz    = (r1_wb_haz  && r1_rvalid) || (r2_wb_haz  && r2_rvalid);
+    assign stallreq  = (ex_haz     && ex_nofwd ) || (mem_haz    && mem_nofwd) 
+                       || branch_stall || ( inst_wb_nofwd && wb_haz );
 
     assign branch_stall   = id_is_branch && ex_haz ;
 

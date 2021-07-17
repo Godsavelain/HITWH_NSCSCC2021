@@ -79,6 +79,7 @@ wire         id_c0ren_o;
 wire [ 7: 0] id_c0addr_o;
 wire         id_is_branch_o;
 wire         id_pcvalid_o;
+wire         id_inst_wb_nofwd_o;
 
 //ex stage signals
 wire [31: 0] ex_inst_i;
@@ -94,6 +95,7 @@ wire         ex_mduinst_i;
 wire [31: 0] ex_offset_i;
 wire         ex_nofwd_i;
 wire         ex_storeinst_o;
+wire         ex_inst_wb_nofwd_o;
 
 wire [`AOP]  ex_aluop_i;
 wire [`MDOP] ex_mduop_i;
@@ -147,6 +149,8 @@ wire [ 4: 0] mem_waddr_i;
 wire [31: 0] mem_wdata_i;
 wire [ 3: 0] mem_wren_i;
 
+wire         mem_inst_wb_nofwd_o;
+
 //writeback stage signals
 wire [`MMOP] wb_memop_i;
 wire [ 3: 0] wb_wren_i;
@@ -167,6 +171,8 @@ wire         wb_inst_mfhi_i;
 wire         wb_inst_mflo_i;
 wire         mdu_s2_stallreq_o;
 
+wire         wb_inst_wb_nofwd_o;
+
 //to regfile
 wire         rf_ren1_i;
 wire         rf_ren2_i;
@@ -176,6 +182,7 @@ wire [ 4: 0] rf_raddr2_i;
 wire [ 3: 0] rf_wren;
 wire [ 4: 0] rf_waddr;
 wire [31: 0] rf_wdata;
+wire [31: 0] rf_wdata_raw;
 
 wire         rf_ex_nofwd;
 wire         rf_mem_nofwd;
@@ -346,7 +353,8 @@ decoder DECODER
   .raw_data1_i        (raw_data1_i),
   .raw_data2_i        (raw_data2_i),
   .id_pcvalid_i       (if_pcvalid_o),
-  .id_pcvalid_o       (id_pcvalid_o)
+  .id_pcvalid_o       (id_pcvalid_o),
+  .id_inst_wb_nofwd_o (id_inst_wb_nofwd_o)
 );
 
 regfile REGFILE
@@ -364,6 +372,7 @@ regfile REGFILE
   .we                 (rf_wren            ),
   .waddr              (rf_waddr           ),
   .wdata              (rf_wdata           ),
+  .wdata_raw          (rf_wdata_raw       ),
 
   .ex_wen             (ex_wren_i          ),
   .ex_waddr           (ex_waddr_i         ),
@@ -372,9 +381,9 @@ regfile REGFILE
   .mem_waddr          (mem_waddr_i        ),
   .mem_wdata          (mem_wdata_bp       ),
 
-
   .ex_nofwd           (rf_ex_nofwd        ),
   .mem_nofwd          (rf_mem_nofwd       ),
+  .inst_wb_nofwd      (wb_inst_wb_nofwd_o ),
   .stallreq           (streq_id_i         ),
 
   .id_is_branch       (id_is_branch_o     ),
@@ -419,7 +428,9 @@ execute EXECUTE
 
   .ex_c0wen_i         (id_c0wen_o         ),
   .ex_c0ren_i         (id_c0ren_o         ),
-  .ex_c0addr_i        (id_c0addr_o        ),          
+  .ex_c0addr_i        (id_c0addr_o        ), 
+
+  .ex_inst_wb_nofwd_i (id_inst_wb_nofwd_o ),         
 
   .mdu_is_active      (is_active          ),
   .mdu_div_active     (mdu_div_active     ),
@@ -463,8 +474,9 @@ execute EXECUTE
 
   .ex_wdata_bp_o      (ex_wdata_bp        ),
   .ex_nofwd_bp_o      (rf_ex_nofwd        ),
-  .ex_pcvalid_i       (id_pcvalid_o),
-  .ex_pcvalid_o       (ex_pcvalid_o)
+  .ex_pcvalid_i       (id_pcvalid_o       ),
+  .ex_pcvalid_o       (ex_pcvalid_o       ),
+  .ex_inst_wb_nofwd_o (ex_inst_wb_nofwd_o )
 );
 
 mmu DMMU
@@ -586,7 +598,9 @@ mem MEM
   .mem_inst_load_i    (mem_inst_load_i),
 
   .mem_stall_i        (stall_mem_o),
-  .mem_flush_i        (flush_wb_o ),  
+  .mem_flush_i        (flush_wb_o ),
+
+  .mem_inst_wb_nofwd_i(ex_inst_wb_nofwd_o),  
 
   .mem_s2_stallreq_i  (mdu_s2_stallreq_o),
   .dcache_axi_stall_i (0),
@@ -600,8 +614,9 @@ mem MEM
 
   .mem_wdata_bp       (mem_wdata_bp),
   .mem_nofwd_bp       (rf_mem_nofwd),
-  .mem_stall_o        (streq_mem_i)
+  .mem_stall_o        (streq_mem_i),
 
+  .mem_inst_wb_nofwd_o(mem_inst_wb_nofwd_o)
 );
 
 
@@ -633,7 +648,11 @@ writeback WRITEBACK
   .wb_wren_o          (rf_wren),
   .wb_waddr_o         (rf_waddr),
   .wb_wdata_o         (rf_wdata),
+  .wb_wdata_raw_o     (rf_wdata_raw),
   .wb_stallreq        (streq_wb_i),
+
+  .wb_inst_wb_nofwd_i (mem_inst_wb_nofwd_o),
+  .wb_inst_wb_nofwd_o (wb_inst_wb_nofwd_o),
 
   .wb_whien_o         (whien),
   .wb_wloen_o         (wloen),
