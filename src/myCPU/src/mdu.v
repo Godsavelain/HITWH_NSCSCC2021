@@ -31,6 +31,7 @@ module mdu
 	output wire [31: 0]		lo_o,
 	output wire 			inst_mfhi_o,
 	output wire 			inst_mflo_o,
+	output wire 			inst_mul_o,
 	//to mem
 	output wire 			mdu_s2_stallreq_o
 );
@@ -108,6 +109,7 @@ module mdu
 	wire 			inst_mflo;
 	wire 			inst_mthi;
 	wire 			inst_mtlo;
+	wire 			inst_mul;
 
 assign inst_mult  = s2_mduop_o[0];
 assign inst_multu = s2_mduop_o[1];
@@ -117,6 +119,7 @@ assign inst_mfhi  = s2_mduop_o[4];
 assign inst_mflo  = s2_mduop_o[5];
 assign inst_mthi  = s2_mduop_o[6];
 assign inst_mtlo  = s2_mduop_o[7];
+assign inst_mul   = s2_mduop_o[8];
 
 //assign div_active = s2_is_div | s1_is_div;
 //assign is_active = s1_active | s2_active | div_active ;
@@ -124,15 +127,16 @@ assign div_active = s2_is_div;
 assign is_active = s2_active | div_active ;
 assign mdu_div_active =  div_active;
 
-//0:MULT 1:MULTU 2:DIV 3:DIVU 4:MFHI 5:MFLO 6:MTHI 7:MTLO
+//0:MULT 1:MULTU 2:DIV 3:DIVU 4:MFHI 5:MFLO 6:MTHI 7:MTLO 8:MUL
 
 
 assign mdus1_en  = |mduop_i;
-assign is_signed = mduop_i[0] | mduop_i[2] ;
+assign is_signed = mduop_i[0] | mduop_i[2] | mduop_i[8];
 
 
 assign inst_mfhi_o = inst_mfhi;
 assign inst_mflo_o = inst_mflo;
+assign inst_mul_o  = inst_mul;
 
 assign hi_wen 	 = inst_mult | inst_multu | inst_div | inst_divu | inst_mthi ;
 assign lo_wen 	 = inst_mult | inst_multu | inst_div | inst_divu | inst_mtlo;
@@ -141,7 +145,7 @@ assign hi_o 	 = ({32{inst_mult | inst_multu}} 		& s2_hi_o 	)
 				  |({32{inst_divu}} 					& s2_divuans[31: 0]	)
 				  |({32{inst_mthi}} 					& s2_whidata_o		)
 				  |({32{inst_mfhi}}						& mdu_hi_i 			);
-assign lo_o 	 = ({32{inst_mult | inst_multu}} 		& s2_lo_o 			)
+assign lo_o 	 = ({32{inst_mult | inst_multu | inst_mul}} 	& s2_lo_o 	)
 				  |({32{inst_div}} 						& s2_divans [63:32]	)
 				  |({32{inst_divu}} 					& s2_divuans[63:32]	)
 				  |({32{inst_mtlo}} 					& s2_wlodata_o		)

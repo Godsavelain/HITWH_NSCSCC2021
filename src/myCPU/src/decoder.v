@@ -160,6 +160,7 @@ module decoder
 	wire        inst_divu;
 	wire        inst_mult;
 	wire        inst_multu;
+	wire 		inst_mul;
 
 //logic
 	wire        inst_and;
@@ -251,6 +252,7 @@ module decoder
     					| inst_lw 	  | inst_mfc0	| inst_lwl  | inst_lwr
     					| inst_mfc0;
     assign mul_div 		= inst_div 	  | inst_divu 	|inst_mult 	| inst_multu;
+    					//do not include mul because mul needs to write GPR
 
     //to regfile
 	assign id_reg1addr_o	=	rs;
@@ -272,7 +274,7 @@ module decoder
 						| inst_bgtz   | inst_blez    | inst_bltz  | inst_bgezal
 						| inst_bltzal | inst_j       | inst_jal   | inst_jr
 						| inst_jalr   | inst_eret    | inst_mfc0  | inst_mtc0
-						| inst_break  | inst_syscall;
+						| inst_break  | inst_syscall | inst_mul;
 
 
 	assign id_excs_next[0] = 0;
@@ -310,6 +312,7 @@ module decoder
 	assign inst_sltiu  = op_d[`OP_SLTIU];
 	assign inst_div    = op_d[`OP_SPECIAL] & func_d[6'h1a] & sa_d[5'h00] & rd_d[5'h00];
 	assign inst_divu   = op_d[`OP_SPECIAL] & func_d[6'h1b] & sa_d[5'h00] & rd_d[5'h00];
+	assign inst_mul    = op_d[`OP_SPECIAL2] & func_d[6'h02] & sa_d[5'h00];
 	assign inst_mult   = op_d[`OP_SPECIAL] & func_d[6'h18] & sa_d[5'h00] & rd_d[5'h00];
 	assign inst_multu  = op_d[`OP_SPECIAL] & func_d[6'h19] & sa_d[5'h00] & rd_d[5'h00];
 	assign inst_and    = op_d[`OP_SPECIAL] & func_d[6'h24] & sa_d[5'h00];
@@ -416,13 +419,14 @@ module decoder
 							| inst_bne | inst_bgez | inst_bgtz | inst_blez  | inst_bltz| inst_bgezal
 							| inst_bltzal|inst_jr  | inst_jalr | inst_mthi  | inst_mtlo
 							| inst_lw  | inst_lh   | inst_lhu  | inst_lb 	| inst_lbu 
-							| inst_sw  | inst_sh   | inst_sb   | inst_swl   | inst_swr   ;
+							| inst_sw  | inst_sh   | inst_sb   | inst_swl   | inst_swr | inst_mul  ;
 
 	assign id_ren2_o		= inst_add | inst_addu | inst_sub  | inst_subu  | inst_sra  | inst_sll
 							| inst_slt | inst_sltu | inst_div  | inst_divu  | inst_srl
 							| inst_mult| inst_multu| inst_and  | inst_nor   | inst_or
 							| inst_sllv| inst_srav | inst_srlv | inst_beq	| inst_xor   |
-							| inst_bne | inst_sb   | inst_sh   | inst_sw    | inst_swl   | inst_swr| inst_mtc0 ;
+							| inst_bne | inst_sb   | inst_sh   | inst_sw    | inst_swl   | inst_swr
+							| inst_mtc0| inst_mul ;
 
  	assign id_wren_next 	= id_flush_i ? 0 : {4{~mul_div & ~inst_beq & ~inst_bne & ~inst_bgez & 
  							  ~inst_bgtz & ~inst_blez & ~inst_bltz & ~inst_j &
@@ -463,14 +467,14 @@ module decoder
 	assign id_inslot_next   = id_flush_i ? 0 : id_inslot_i;
 	assign id_inst_next 	= id_flush_i ? 0 : id_inst;
 
-	assign id_mduinst_next  = inst_mult | inst_multu | inst_div | inst_divu | inst_mthi | inst_mtlo;
+	assign id_mduinst_next  = inst_mult | inst_multu | inst_div | inst_divu | inst_mthi | inst_mtlo | inst_mul;
 	assign id_divinst_next  = inst_div  | inst_divu;
-	assign id_mduop_next    = {inst_mtlo,inst_mthi ,inst_mflo,inst_mfhi,inst_divu,inst_div,inst_multu,inst_mult};
+	assign id_mduop_next    = {inst_mul,inst_mtlo,inst_mthi ,inst_mflo,inst_mfhi,inst_divu,inst_div,inst_multu,inst_mult};
 	assign id_c0wen_next 	= inst_mtc0;
 	assign id_c0ren_next 	= inst_mfc0;
 	assign id_c0addr_next 	= {id_inst_i[15:11],id_inst_i[2:0]};
 	assign id_pcvalid_next  = id_flush_i ? 0 : id_pcvalid_i;
-	assign id_inst_wb_nofwd_next = id_flush_i ? 0 : inst_mfhi | inst_mflo ;
+	assign id_inst_wb_nofwd_next = id_flush_i ? 0 : inst_mfhi | inst_mflo | inst_mul;
 
 	//for branch outputs
 	wire [31: 0] j_target;	//j and jal
@@ -500,7 +504,7 @@ module decoder
     assign id_branch_pc_o   = inst_branch_b ? b_target :
     						  inst_branch_j ? j_target :
     						  branch_opr1;
-    assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo | inst_mfc0;
+    assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo | inst_mfc0 |inst_mul;
 
 
 	assign branch_opr1 = id_ex_res_as1_i ? id_res_from_ex_i : raw_data1_i;

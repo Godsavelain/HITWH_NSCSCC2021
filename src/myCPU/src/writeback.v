@@ -26,6 +26,7 @@ module writeback
 	input wire 				wb_wloen_i,
 	input wire 				wb_inst_mfhi_i,
 	input wire 				wb_inst_mflo_i,
+	input wire 				wb_inst_mul_i,
 
 	//to regfile
 	output wire [ 3: 0]		wb_wren_o,
@@ -56,7 +57,7 @@ module writeback
 	wire   [31: 0]			wb_wdata_final;
 
 	assign wb_wdata_final		= wb_inst_mfhi_i ? wb_hi_i :
-								  wb_inst_mflo_i ? wb_lo_i :
+								  wb_inst_mflo_i | wb_inst_mul_i ? wb_lo_i :
 								  wb_wdata_i;
 //to regfile
 	assign wb_wren_o			= wb_stallreq ? 0 : wb_wren_i;

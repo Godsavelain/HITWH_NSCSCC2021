@@ -169,6 +169,7 @@ wire         wb_whien_i;
 wire         wb_wloen_i;
 wire         wb_inst_mfhi_i;
 wire         wb_inst_mflo_i;
+wire         wb_inst_mul_i;
 wire         mdu_s2_stallreq_o;
 
 wire         wb_inst_wb_nofwd_o;
@@ -525,6 +526,7 @@ mdu MDU
   .mdu_div_active     (mdu_div_active),
   .inst_mfhi_o        (wb_inst_mfhi_i),
   .inst_mflo_o        (wb_inst_mflo_i),
+  .inst_mul_o         (wb_inst_mul_i),
 
   .mdu_s2_stallreq_o  (mdu_s2_stallreq_o)
 );
@@ -644,6 +646,7 @@ writeback WRITEBACK
   .wb_wloen_i         (wb_wloen_i),
   .wb_inst_mfhi_i     (wb_inst_mfhi_i),
   .wb_inst_mflo_i     (wb_inst_mflo_i),
+  .wb_inst_mul_i      (wb_inst_mul_i),
 
   .wb_wren_o          (rf_wren),
   .wb_waddr_o         (rf_waddr),
