@@ -31,7 +31,7 @@ module dcache_s1(
     input  wire                 s1_hit2_i,
     input  wire                 s1_s2rreq_i,//s2 stage has req
     input  wire                 s1_s2wreq_i,
-    input  wire [`ICACHE_STATUS] s1_s2_status_i,
+    input  wire [`DCACHE_STATUS] s1_s2_status_i,
     input  wire                 s1_hit_wen_i,//write hit happened
     input  wire [`WayBus]       s1_hit_rdata_i, //for hit write
 

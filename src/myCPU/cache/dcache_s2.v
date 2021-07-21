@@ -24,7 +24,6 @@ module dcache_s2(
     //from axi
     input wire                 s2_rend_i,
     input wire                 s2_wend_i,
-    input wire [31: 0]         s2_ucdata_i,
     input wire [`WayBus]       s2_cacheline_rdata_i,
 
     //from cpu

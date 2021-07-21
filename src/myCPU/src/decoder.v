@@ -516,11 +516,11 @@ module decoder
     assign EQ     = (branch_opr1 ^ branch_opr2) == 0;   
     assign NEQ    = ~EQ;                     
 
-    assign id_branch_en_o	= (inst_beq & EQ) | (inst_bne & NEQ) | (inst_bgez & GEZ) | (inst_bgtz & GZ) 
+    assign id_branch_en_o	= ((inst_beq & EQ) | (inst_bne & NEQ) | (inst_bgez & GEZ) | (inst_bgtz & GZ) 
     						| (inst_blez & LEZ) | (inst_bltz & LZ) | (inst_bgezal & GEZ) | (inst_bltzal & LZ)
-    						| inst_j | inst_jal | inst_jr | inst_jalr;
-    assign id_next_inslot_o = inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
-    						| inst_bgezal | inst_bltzal | inst_j   | inst_jal | inst_jr  | inst_jalr;
+    						| inst_j | inst_jal | inst_jr | inst_jalr) & en & ~id_flush_i;
+    assign id_next_inslot_o = (inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
+    						| inst_bgezal | inst_bltzal | inst_j   | inst_jal | inst_jr  | inst_jalr) & en &  ~id_flush_i;
 
 	assign en 				= ~ id_stall_i;
 

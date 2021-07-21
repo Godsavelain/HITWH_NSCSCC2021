@@ -121,12 +121,12 @@ DFFRE #(.WIDTH(1))		pcvalid_next			(.d(pc_pcvalid_next), .q(pc_pcvalid_o), .en(e
 
 
 always @(posedge clk, negedge rst_n) begin
-        if(!rst_n | !icache_streq) begin
+        if(!rst_n | !(icache_streq | if_stall_i ) ) begin
             branch_pc_reg <= 0;
 			use_branch_pc_reg <= 0;						
         end
         else begin
-        	if((branch_en & icache_streq)&~if_stall_i)
+        	if(branch_en & (icache_streq | if_stall_i ))
         	begin
         		use_branch_pc_reg <= 1;
         		branch_pc_reg <= branch_pc_i;
@@ -135,7 +135,7 @@ always @(posedge clk, negedge rst_n) begin
     end
 
 always @(posedge clk, negedge rst_n) begin
-        if(!rst_n | !icache_streq) begin
+        if(!rst_n | !(icache_streq | if_stall_i )) begin
             exc_pc_reg <= 0;
 			use_exc_pc_reg <= 0;					
         end
@@ -149,11 +149,11 @@ always @(posedge clk, negedge rst_n) begin
     end
 
 always @(posedge clk, negedge rst_n) begin
-        if(!rst_n | !icache_streq) begin
+        if(!rst_n | !(icache_streq | if_stall_i )) begin
             in_delay_slot <= 0;					
         end
         else begin
-        	if((if_inslot_i & icache_streq)&(~if_stall_i))
+        	if(if_inslot_i & (icache_streq | if_stall_i ))
         	begin
 				in_delay_slot <= 1;
         	end

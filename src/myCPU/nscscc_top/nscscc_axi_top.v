@@ -177,7 +177,6 @@ module mycpu_top
     wire [31: 0]          dcache_rdata_o;
     wire                  dcache_data_valid;
     wire                  cpu_mem_valid_o;
-    wire [`WayBus]        dcache_axi_data_o;
     wire [31: 0]          dc_req_addr_in;
     wire [31: 0]          dc_bus_addr_o;
     wire [31: 0]          dc_uc_data_i;

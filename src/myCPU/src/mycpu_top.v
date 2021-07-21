@@ -10,7 +10,6 @@ module mycpu_core_top
   input wire                 dcache_stall,
   input wire                 icache_stall,
   output wire                ibus_stall,
-  //output wire                dbus_stall,
 
   //to/from icache_axi and icache
   output wire                icache_bus_en,

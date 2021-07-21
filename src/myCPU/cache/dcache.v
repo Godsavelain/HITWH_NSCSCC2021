@@ -57,7 +57,7 @@ module dcache(
     wire                 s1_install_o;
     wire [`DataBus]      s1_data_way0_o;
     wire [`DataBus]      s1_data_way1_o;
-    wire [`ICACHE_STATUS]    s1_s2_status_i;
+    wire [`DCACHE_STATUS]    s1_s2_status_i;
     wire                 s1_s2wreq_i;
     wire                 s1_s2rreq_i;
     wire [ 3: 0]         s1_bus_wen_o;

@@ -2,7 +2,7 @@ TO DO LIST：icache通过系统测试
 
 ###### 2021.7.21
 
-* 将dcache的uncache取指请求移动到MEM段，由dcache发出请求而非流水线直接请求dcache_axi。现在一切访存请求都由dcache向dcache_axi发出，CPU只从dcache中取数。通过功能测试仿真。
+* 将dcache的uncache取指请求移动到MEM段，由dcache发出请求而非流水线直接请求dcache_axi。现在一切访存请求都由dcache向dcache_axi发出，CPU只从dcache中取数。通过功能测试与性能测试。memory game存在问题，有时候按键2,3,4号键会亮1号键的灯，检查中。
 
 ###### 2021.7.18
 

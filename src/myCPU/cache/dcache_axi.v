@@ -90,11 +90,6 @@ module dcache_axi
 
     assign bready   = 1'b1;
 
-    //end of read,give data in same cycle
-    assign dcache_axi_rend = (rlast & read_handshake);
-    //end of write
-    assign dcache_axi_wend = bvalid ;
-
 //to hold req
     reg  ca_rreq_reg;
     always @(posedge aclk, negedge aresetn) begin
@@ -235,6 +230,11 @@ module dcache_axi
 
     assign read_handshake = rvalid & rready;
     assign write_handshake = wvalid & wready;
+
+    //end of read,give data in same cycle
+    assign dcache_axi_rend = (rlast & read_handshake);
+    //end of write
+    assign dcache_axi_wend = bvalid ;
 
     assign awsize   = { 1'b0, bus_store_size};
     assign arsize   = { 1'b0, bus_load_size};
