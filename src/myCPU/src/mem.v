@@ -5,7 +5,7 @@ module mem
 	input wire			clk,
 	input wire			rst_n,
 
-	input wire [31: 0]	mem_memdata_i,	//data from data sram
+	input wire [31: 0]	mem_memdata_i,	//data from cache
 
 	input wire [31: 0]	mem_inst_i,
 	input wire 			mem_inslot_i,
@@ -29,9 +29,6 @@ module mem
 	//from mdu
 	input wire 			mem_s2_stallreq_i,
 
-	//from dcache
-	input wire			dcache_axi_stall_i,	
-
 	output wire [31: 0]	mem_inst_o,
 	//output wire 		mem_inslot_o,
 	//output wire 		mem_memop_o,
@@ -43,10 +40,10 @@ module mem
 	//for bypass
 	output wire [31: 0] mem_wdata_bp,
 	output wire 		mem_nofwd_bp,
-
 	output wire			mem_stall_o,
+	output wire 		mem_inst_wb_nofwd_o,
 
-	output wire 		mem_inst_wb_nofwd_o
+	output wire 		mem_valid_o//not stalled (can receive new data)
 
 );
 	

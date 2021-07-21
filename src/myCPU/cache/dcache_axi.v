@@ -41,30 +41,35 @@ module dcache_axi
     input  wire          bvalid,
     output wire          bready,
 
-    input  wire          bus_en,
-    input  wire [ 3: 0]  bus_wen,
-    input  wire [31: 0]  bus_addr,
-    output wire [31: 0]  bus_rdata,
+    input  wire [ 3: 0]  uc_wen,
+    input  wire [31: 0]  cache_addr,
+    output wire [31: 0]  bus_rdata,//uncache read data,to cpu via dcache
     input  wire [31: 0]  bus_wdata,
     input  wire [ 1: 0]  bus_store_size,
     input  wire [ 1: 0]  bus_load_size,
-    //input  wire          bus_stall,
-    //input  wire          bus_stall,
-    //input  wire          bus_cached,
+
+    //from dcache
+    input wire                   ca_rreq_i,
+    input wire                   ca_wreq_i,
+    input wire                   uc_rreq_i,
+    input wire                   uc_wreq_i,
+
+    //to dcache
+    output wire                  dcache_axi_rend,
+    output wire                  dcache_axi_wend,
+    output wire [`WayBus]        dcache_axi_data_o,//give a cacheline at once
 
     input  wire [`DCACHE_STATS]  status_in, 
+    input  wire [31: 0]          req_addr_in, //to hold the uncache req addr 
+    output wire [31: 0]          req_addr_out, 
     output wire [`DCACHE_STATS]  status_out, 
-    output wire                  dcache_axi_stall,
-
-    input  wire                  bus_cached
+    output wire                  dcache_axi_stall
 
 );
     reg [31: 0]        read_data;
     assign bus_rdata = read_data;
 
     assign arid     = 4'b0;
-    assign arlen    = 4'h0;
-    //assign arsize   = 3'b010;
     assign arburst  = 2'b01;
     assign arlock   = 2'b0;
     assign arcache  = 4'b0;
@@ -73,7 +78,7 @@ module dcache_axi
     assign rready   = 1'b1;
 
     assign awid     = 4'b0;
-    assign awlen    = 4'b0;
+
     assign awburst  = 2'b01;
     assign awlock   = 2'b0;
     assign awcache  = 4'b0;
@@ -83,9 +88,115 @@ module dcache_axi
 
     assign wlast    = 1;
 
-
     assign bready   = 1'b1;
 
+    //end of read,give data in same cycle
+    assign dcache_axi_rend = (rlast & read_handshake);
+    //end of write
+    assign dcache_axi_wend = bvalid ;
+
+//to hold req
+    reg  ca_rreq_reg;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            ca_rreq_reg <= 0;                 
+        end
+        else begin
+            if(dcache_axi_rend)
+            begin
+                ca_rreq_reg <= 0;
+            end
+            else if(ca_rreq_i)
+            begin
+                ca_rreq_reg <= 1;
+            end
+        end
+    end
+
+    wire   ca_rreq;
+    assign ca_rreq   = ca_rreq_i ? 1 : ca_rreq_reg;
+    assign arlen     = ca_rreq ? 4'h7 : 4'h0;
+
+    reg  ca_wreq_reg;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            ca_wreq_reg <= 0;                 
+        end
+        else begin
+            if(dcache_axi_wend)
+            begin
+                ca_wreq_reg <= 0;
+            end
+            else if(ca_wreq_i)
+            begin
+                ca_wreq_reg <= 1;
+            end
+        end
+    end
+
+    wire   ca_wreq;
+    assign ca_wreq   = ca_wreq_i ? 1 : ca_wreq_reg;
+    assign awlen     = ca_wreq ? 4'h7 : 4'b0;
+
+    reg  uc_wreq_reg;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            uc_wreq_reg <= 0;                 
+        end
+        else begin
+            if(dcache_axi_wend)
+            begin
+                uc_wreq_reg <= 0;
+            end
+            else if(uc_wreq_i)
+            begin
+                uc_wreq_reg <= 1;
+            end
+        end
+    end
+
+    wire   uc_wreq;
+    assign uc_wreq   = uc_wreq_i ? 1 : uc_wreq_reg;
+
+    reg  uc_rreq_reg;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            uc_rreq_reg <= 0;                 
+        end
+        else begin
+            if(dcache_axi_rend)
+            begin
+                uc_rreq_reg <= 0;
+            end
+            else if(uc_rreq_i)
+            begin
+                uc_rreq_reg <= 1;
+            end
+        end
+    end
+
+    wire   uc_rreq;
+    assign uc_rreq   = uc_rreq_i ? 1 : uc_rreq_reg;
+
+    reg [ 3: 0] bus_wen_reg;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            bus_wen_reg <= 0;                 
+        end
+        else begin
+            if(dcache_axi_wend)
+            begin
+                bus_wen_reg <= 0;
+            end
+            else if(uc_wreq_i)
+            begin
+                bus_wen_reg <= uc_wen;
+            end
+        end
+    end
+
+    wire [ 3: 0] bus_wen;
+    assign bus_wen = uc_wreq ? bus_wen_reg : 4'b1111;
 
 //axi logic
     parameter IDLE           = 8'b00000001;
@@ -97,8 +208,6 @@ module dcache_axi
     parameter WRITE_RESPONSE = 8'b01000000;
     parameter WRITE_END      = 8'b10000000;
 
-
-    wire [`DCACHE_STATS] status;
     wire [`DCACHE_STATS] status_next;
     wire         read_req;
     wire         read_addr_handshake;
@@ -109,15 +218,18 @@ module dcache_axi
     wire         write_handshake;
     wire         read_handshake;
 
-    assign read_req =  ((status_in[0] | status_in[3] | status_in[7] |status_in == 0) & bus_en & !(| bus_wen));
+    wire [31: 0] req_addr_next;
+    assign req_addr_next = (ca_rreq_i | ca_wreq_i | uc_rreq_i | uc_wreq_i ) ? cache_addr : req_addr_in;  
 
-    assign araddr   = bus_addr;
+    assign read_req =  ((status_in[0] | status_in[3] | status_in[7] |status_in == 0) & (ca_rreq_i | uc_rreq_i));
+
+    assign araddr   = req_addr_next;
     assign arvalid  = read_req | status_in[1];
     assign read_addr_handshake = arvalid & arready;
 
-    assign write_req = (status_in[0] | status_in[3] | status_in[7] | status_in == 0) & bus_en & (| bus_wen);
+    assign write_req = (status_in[0] | status_in[3] | status_in[7] | status_in == 0) & (uc_wreq_i | ca_wreq_i);
 
-    assign awaddr   = bus_addr;
+    assign awaddr   = req_addr_next;
     assign awvalid  = write_req | status_in[4];
     assign write_addr_handshake = awvalid & awready;
 
@@ -131,7 +243,7 @@ module dcache_axi
     assign wdata    = bus_wdata;
 
     assign dcache_axi_stall = status_in[1] | (status_in[2] & !(rlast & read_handshake)) | read_req | write_req | 
-                          status_in[4] | status_in[5]                               | (status_in[6] & !bvalid) 
+                          status_in[4] | status_in[5] | (status_in[6] & !bvalid) 
                           ;
 
     assign status_next = (status_in[0] | status_in == 0) && read_req    ? READ_REQUEST  :
@@ -151,8 +263,8 @@ module dcache_axi
                          (status_in[3] | status_in[7]) && write_req     ? WRITE_REQUEST  :
                          8'b0000001;
 
-
-    DFFRE #(.WIDTH(`DCACHE_STATS_W))      stat_next           (.d(status_next), .q(status_out), .en(1), .clk(aclk), .rst_n(aresetn));
+    DFFRE #(.WIDTH(32))  addr_next  (.d(req_addr_next), .q(req_addr_out), .en(1), .clk(aclk), .rst_n(aresetn));
+    DFFRE #(.WIDTH(`DCACHE_STATS_W))  stat_next  (.d(status_next), .q(status_out), .en(1), .clk(aclk), .rst_n(aresetn));
 
    always @(posedge aclk, negedge aresetn) begin
         if (!aresetn) begin

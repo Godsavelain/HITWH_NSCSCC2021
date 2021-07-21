@@ -8,7 +8,6 @@ module control
 	input wire streq_mem_i,
 	input wire streq_wb_i,
 	input wire exc_flag,
-	input wire dcache_axi_stall,
 
 	input wire icache_stall_i,
 	input wire dcache_stall_i,
@@ -36,8 +35,8 @@ module control
 	assign stall_wb_o  = 1'b0;
 
 assign stall = streq_wb_i  					? 5'b11111 :
-			   streq_mem_i 					? 5'b01111 :
-			   (streq_ex_i | dcache_axi_stall) 	? 5'b00111 :
+			   (streq_mem_i | dcache_stall_i) ? 5'b01111 :
+			   streq_ex_i 					? 5'b00111 :
 			   streq_id_i  			    	? 5'b00011 :
 			   icache_stall_i				? 5'b00001 :
 			   //streq_pc_i  					? 5'b00011 :			   

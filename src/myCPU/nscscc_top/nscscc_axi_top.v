@@ -95,10 +95,8 @@ module mycpu_top
     wire          icache_bus_cached;
  
     wire [ 3: 0]  icache_status_out;
-    wire [31: 0]  req_addr_in; 
     wire          icache_axi_stall;
     wire          icache_stall;
-    wire          icache_ask;
     
 
     wire  [ 3: 0] dcache_arid;
@@ -151,23 +149,48 @@ module mycpu_top
 
     wire [`DCACHE_STATS]  dcache_status_out; 
     wire                  dcache_axi_stall;
-    wire                  dcache_stall;
+    wire                  dcache_cache_stall;
     wire                  ibus_stall;
     //wire                  dbus_stall;
 
     wire                  ibus_cached;
-    wire [31: 0]          cpu_virtual_addr_i;
+    wire [31: 0]          icache_virtual_addr_i;
     wire                  icache_axi_req_i;
     wire [31: 0]          icache_axi_addr_i;
     wire                  icache_axi_rend;
     wire [`WayBus]        icache_axi_data_o;
     wire [31: 0]          icache_rdata_o;
     wire                  icache_data_valid;
+    wire [31: 0]          ic_req_addr_in;
 
     wire                  dcache_active;//dcache is working
+    wire                  cpu_if_valid_o;
 
-//dcache axi and dcache
+
+//dcache axi
     wire                  dbus_cached;
+    wire                  uncache_req;
+    wire [31: 0]          dcache_phy_addr_i;
+    wire [31: 0]          dcache_vir_addr_i;
+    wire                  dcache_axi_rend;
+    wire [`WayBus]        dcache_axi_data_o;
+    wire [31: 0]          dcache_rdata_o;
+    wire                  dcache_data_valid;
+    wire                  cpu_mem_valid_o;
+    wire [`WayBus]        dcache_axi_data_o;
+    wire [31: 0]          dc_req_addr_in;
+    wire [31: 0]          dc_bus_addr_o;
+    wire [31: 0]          dc_uc_data_i;
+    wire [31: 0]          dc_bus_wdata_o;
+    wire [ 3: 0]          dc_bus_wen_o;
+    wire [ 1: 0]          dc_bus_store_size_o;
+    wire [ 1: 0]          dc_bus_load_size_o;
+//dcache
+    wire                  uncache_wreq;
+    wire                  uncache_rreq;
+    wire                  cache_rreq;
+    wire                  cache_wreq;
+    wire                  dcache_stall;
 
 mycpu_core_top MY_TOP
 (
@@ -176,7 +199,6 @@ mycpu_core_top MY_TOP
   .ext_int          (ext_int),
 
   .icache_axi_stall     (icache_axi_stall),
-  .dcache_axi_stall     (dcache_axi_stall),
   .icache_stall         (icache_stall),
   .dcache_stall         (dcache_stall),
   .ibus_stall       (ibus_stall),
@@ -192,17 +214,21 @@ mycpu_core_top MY_TOP
   .icache_inst      (icache_rdata_o),
   .icache_data_valid(icache_data_valid),
   .ibus_cached      (ibus_cached),
-  .cpu_virtual_addr_o(cpu_virtual_addr_i),
+  .if_virtual_addr_o(icache_virtual_addr_i),
   .cpu_if_valid_o   (cpu_if_valid_o),
 
   .dcache_bus_en    (dcache_bus_en),
   .dcache_bus_wen   (dcache_bus_wen),
-  .dcache_bus_addr  (dcache_bus_addr),
+  .dcache_phy_addr  (dcache_phy_addr_i),
+  .dcache_vir_addr  (dcache_vir_addr_i),
   .dcache_bus_wdata (dcache_bus_wdata),
   .dcache_bus_rdata (dcache_bus_rdata),
   .dcache_bus_store_size  (dcache_bus_store_size),
   .dcache_bus_load_size   (dcache_bus_load_size),
 
+  .dbus_cached      (dbus_cached),
+  .dbus_stall       (dbus_stall),
+  .cpu_mem_valid_o  (cpu_mem_valid_o),
 
   .debug_wb_pc      (debug_wb_pc),
   .debug_wb_rf_wen  (debug_wb_rf_wen), 
@@ -262,15 +288,15 @@ icache_axi ICACHE_AXI
     .bus_stall              (ibus_stall),
 
     .status_in              (icache_status_out), 
-    .req_addr_in            (req_addr_in),
+    .req_addr_in            (ic_req_addr_in),
     .status_out             (icache_status_out), 
-    .req_addr_out           (req_addr_in),
+    .req_addr_out           (ic_req_addr_in),
     .icache_axi_stall       (icache_axi_stall),
 
     .bus_cached             (ibus_cached),
     .icache_axi_req_i       (icache_axi_req_i),
     .icache_axi_addr_i      (icache_axi_addr_i),   
-    .dcache_active          (dcache_axi_stall),
+    .dcache_active          (dcache_stall),
     .icache_axi_rend        (icache_axi_rend),
     .icache_axi_data_o      (icache_axi_data_o)
 );
@@ -283,7 +309,7 @@ icache ICACHE
      
     .cpu_rreq_i             (icache_bus_en),
     .cpu_cached_i           (ibus_cached),
-    .cpu_virtual_addr_i     (cpu_virtual_addr_i),
+    .cpu_virtual_addr_i     (icache_virtual_addr_i),
     .cpu_physical_addr_i    (icache_bus_addr),
     .cpu_bus_stall_i        (ibus_stall),
     .cpu_if_valid_i         (cpu_if_valid_o),
@@ -341,22 +367,69 @@ dcache_axi DCACHE_AXI
     .bvalid                  (dcache_bvalid),
     .bready                  (dcache_bready),
 
-    .bus_en                  (dcache_bus_en),
-    .bus_wen                 (dcache_bus_wen),
-    .bus_addr                (dcache_bus_addr),
-    .bus_rdata               (dcache_bus_rdata),
-    .bus_wdata               (dcache_bus_wdata),
-    .bus_store_size          (dcache_bus_store_size),
-    .bus_load_size           (dcache_bus_load_size),
-    //.bus_stall               (dbus_stall),
+    .uc_wen                  (dc_bus_wen_o),
+    .cache_addr              (dc_bus_addr_o),
+    .bus_rdata               (dc_uc_data_i),
+    .bus_wdata               (dc_bus_wdata_o),
+    .bus_store_size          (dc_bus_store_size_o),
+    .bus_load_size           (dc_bus_load_size_o),
+
+    .ca_rreq_i               (cache_rreq),
+    .ca_wreq_i               (cache_wreq),
+    .uc_rreq_i               (uncache_rreq),
+    .uc_wreq_i               (uncache_wreq),
+
+    .dcache_axi_rend         (dcache_axi_rend),
+    .dcache_axi_wend         (dcache_axi_wend),
+    .dcache_axi_data_o       (dcache_axi_data_o),
 
     .status_in               (dcache_status_out), 
-    .status_out              (dcache_status_out), 
-    .dcache_axi_stall        (dcache_axi_stall),
-
-    .bus_cached              (dbus_cached)
+    .status_out              (dcache_status_out),
+    .req_addr_in             (dc_req_addr_in),
+    .req_addr_out            (dc_req_addr_in), 
+    .dcache_axi_stall        (dcache_axi_stall)
 
 );
+
+dcache DCACHE
+(
+     .clk                       (aclk),
+     .rst_n                     (aresetn),
+    
+     .dc_bus_en_i               (dcache_bus_en),
+     .dc_bus_wen_i              (dcache_bus_wen),
+     .dc_bus_viraddr_i          (dcache_vir_addr_i),
+     .dc_bus_phyaddr_i          (dcache_phy_addr_i),
+     .dc_bus_wdata_i            (dcache_bus_wdata),
+     .dc_bus_store_size_i       (dcache_bus_store_size),
+     .dc_bus_load_size_i        (dcache_bus_load_size),
+            
+     .cpu_cached_i              (dbus_cached),
+     .cpu_bus_stall_i           (dbus_stall),
+     .cpu_mem_valid_i           (cpu_mem_valid_o),
+    
+     .rend                      (dcache_axi_rend),
+     .wend                      (dcache_axi_wend),
+     .cacheline_rdata_i         (dcache_axi_data_o),
+     .dc_uc_data_i              (dc_uc_data_i),
+    
+     .dc_bus_wen_o              (dc_bus_wen_o),
+     .dc_bus_addr_o             (dc_bus_addr_o),
+     .dc_bus_wdata_o            (dc_bus_wdata_o),
+     .dc_bus_store_size_o       (dc_bus_store_size_o),
+     .dc_bus_load_size_o        (dc_bus_load_size_o),
+
+     .uncache_wreq              (uncache_wreq),
+     .uncache_rreq              (uncache_rreq),
+     .cache_rreq                (cache_rreq),
+     .cache_wreq                (cache_wreq),
+
+     .dcache_stall_o            (dcache_cache_stall),
+     .dcache_rdata_o            (dcache_bus_rdata),
+     .dcache_data_valid         (dcache_data_valid)
+    );
+
+    assign dcache_stall = dcache_axi_stall | dcache_cache_stall;
 
 AXI_2x1 Bus_Interface (
         .aclk             ( aclk        ),                 

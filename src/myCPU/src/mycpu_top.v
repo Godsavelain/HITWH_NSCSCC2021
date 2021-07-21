@@ -7,9 +7,8 @@ module mycpu_core_top
   input wire  [ 5: 0]       ext_int,
 
   input wire                 icache_axi_stall,
-  input wire                 dcache_axi_stall,
-  input wire                 icache_stall,
   input wire                 dcache_stall,
+  input wire                 icache_stall,
   output wire                ibus_stall,
   //output wire                dbus_stall,
 
@@ -23,23 +22,26 @@ module mycpu_core_top
   input  wire [31: 0]        icache_inst,
   input  wire                icache_data_valid,
   output wire                ibus_cached,
-  output wire [31: 0]        cpu_virtual_addr_o,
+  output wire [31: 0]        if_virtual_addr_o,
   output wire                cpu_if_valid_o,
 
-  //to/from dcache_axi
+  //to/from dcache
   output wire                dcache_bus_en,
   output wire [ 3: 0]        dcache_bus_wen,
-  output wire [31: 0]        dcache_bus_addr,
+  output wire [31: 0]        dcache_vir_addr,
+  output wire [31: 0]        dcache_phy_addr,
   output wire [31: 0]        dcache_bus_wdata,
   input  wire [31: 0]        dcache_bus_rdata,
   output wire [ 1: 0]        dcache_bus_store_size,
   output wire [ 1: 0]        dcache_bus_load_size,
 
-  //output wire                dbus_cached,
+  output wire                dbus_cached,
+  output wire                dbus_stall,
+  output wire                cpu_mem_valid_o,
 
   //debug
   output wire [31: 0]        debug_wb_pc,
-  output wire [ 3: 0]        debug_wb_rf_wen, //write regfile enable
+  output wire [ 3: 0]        debug_wb_rf_wen, //write regfile enable 
   output wire [ 4: 0]        debug_wb_rf_wnum,//dest reg id
   output wire [31: 0]        debug_wb_rf_wdata
 
@@ -285,7 +287,7 @@ mmu IMMU
 
 //assign ibus_cached = 1;
 assign ibus_cached = icache_cached;
-assign cpu_virtual_addr_o = if_bus_vaddr;
+assign if_virtual_addr_o = if_bus_vaddr;
 
 
 decoder DECODER
@@ -484,12 +486,14 @@ mmu DMMU
 (
   .en       (dcache_bus_en),
   .vaddr    (ex_bus_vaddr),
-  .paddr    (dcache_bus_addr),
+  .paddr    (dcache_phy_addr),
   .cached   (dcache_cached),
   .ConfigK0 (ConfigK0_o)
 );
 
-assign dbus_cached = dcache_cached;
+//assign dbus_cached = dcache_cached;
+assign dbus_cached = 0;
+assign dcache_vir_addr = ex_bus_vaddr;
 
 alu ALU
 (
@@ -605,7 +609,6 @@ mem MEM
   .mem_inst_wb_nofwd_i(ex_inst_wb_nofwd_o),  
 
   .mem_s2_stallreq_i  (mdu_s2_stallreq_o),
-  .dcache_axi_stall_i (0),
   .mem_inst_o         (wb_inst_i),
   //.mem_inslot_o       (),
 
@@ -618,7 +621,9 @@ mem MEM
   .mem_nofwd_bp       (rf_mem_nofwd),
   .mem_stall_o        (streq_mem_i),
 
-  .mem_inst_wb_nofwd_o(mem_inst_wb_nofwd_o)
+  .mem_inst_wb_nofwd_o(mem_inst_wb_nofwd_o),
+
+  .mem_valid_o        (cpu_mem_valid_o)
 );
 
 
@@ -676,7 +681,6 @@ control control
   .streq_mem_i        (streq_mem_i),
   .streq_wb_i         (streq_wb_i),
   .exc_flag           (exc_flag),
-  .dcache_axi_stall   (dcache_axi_stall),
   .icache_stall_i     (icache_stall),
   .dcache_stall_i     (dcache_stall),
 
@@ -694,8 +698,7 @@ control control
 );
 
 assign  ibus_stall = stall_pc_o;
-// assign  ibus_stall = dcache_axi_stall;
-//assign  dbus_stall = stall_ex_o;
+assign  dbus_stall = stall_ex_o;
 
 hilo HILO
 (

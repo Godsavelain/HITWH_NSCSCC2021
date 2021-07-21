@@ -27,6 +27,14 @@
 `define ICACHE_READ 2'b10
 `define ICACHE_IDLE 2'b01
 
+`define DCACHE_STATUS  `DCACHE_STATUS_W-1:0 
+`define DCACHE_STATUS_W 5
+`define DCACHE_IDLE 	5'b00001
+`define DCACHE_CA_READ 	5'b00010
+`define DCACHE_CA_WRITE 5'b00100
+`define DCACHE_UC_READ  5'b01000//for uncache
+`define DCACHE_UC_WRITE 5'b10000//for uncache
+
 //Num
 `define BlockNum 8
 `define SetNum 64

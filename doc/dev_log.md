@@ -1,5 +1,9 @@
 TO DO LIST：icache通过系统测试
 
+###### 2021.7.21
+
+* 将dcache的uncache取指请求移动到MEM段，由dcache发出请求而非流水线直接请求dcache_axi。现在一切访存请求都由dcache向dcache_axi发出，CPU只从dcache中取数。通过功能测试仿真。
+
 ###### 2021.7.18
 
 * 实现mul指令，看起来可以跑通系统测试的全部test了

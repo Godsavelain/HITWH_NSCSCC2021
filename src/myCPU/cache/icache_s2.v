@@ -1,4 +1,3 @@
-
 `include "defines_cache.v"
 module icache_s2(
     input wire                  clk,
@@ -24,7 +23,7 @@ module icache_s2(
     input wire [`WayBus]       s2_cacheline_rdata_i,
 
     //from cpu
-    input wire                 s2_cpuvalid_i,
+    input wire                 s2_cpuvalid_i,//cpu get data in this cycle
 
     //cache state
     output wire [`ICACHE_STATUS] s2_status_o,
