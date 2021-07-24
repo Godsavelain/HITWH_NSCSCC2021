@@ -11,6 +11,7 @@ module pc
 	input wire 				icache_stall,
 	//input wire				usrmode,
 	input wire				branch_en,
+	input wire 				if_id_valid_i,
 	input wire [31: 0]		if_pc_i,
 
 	input wire [31: 0]		flush_pc_i,
@@ -126,7 +127,7 @@ always @(posedge clk, negedge rst_n) begin
 			use_branch_pc_reg <= 0;						
         end
         else begin
-        	if(branch_en & (icache_streq | if_stall_i ))
+        	if(branch_en & (icache_streq | if_stall_i ) & if_id_valid_i)
         	begin
         		use_branch_pc_reg <= 1;
         		branch_pc_reg <= branch_pc_i;
@@ -153,7 +154,7 @@ always @(posedge clk, negedge rst_n) begin
             in_delay_slot <= 0;					
         end
         else begin
-        	if(if_inslot_i & (icache_streq | if_stall_i ))
+        	if(if_inslot_i & (icache_streq | if_stall_i ) & if_id_valid_i)
         	begin
 				in_delay_slot <= 1;
         	end

@@ -155,15 +155,15 @@ module icache_axi
 
     assign ca_req_addr    = icache_axi_req_i ? icache_axi_addr_i : ca_req_addr_reg;
 
-    assign cache_fill_req = !dcache_active & ca_req & (status_in[0] | status_in[3] | status_in == 0) & !bus_stall ;
-    assign uncache_req    = (!bus_stall & ((status_in[0] | status_in[3] | status_in == 0) & bus_en) & !bus_cached);
+    assign cache_fill_req = ca_req & (status_in[0] | status_in[3] | status_in == 0)  ;
+    assign uncache_req    = (((status_in[0] | status_in[3] | status_in == 0) & bus_en) & !bus_cached);
 
-    assign read_req =  uncache_req | cache_fill_req ;
+    assign read_req =  (uncache_req | cache_fill_req) & (!bus_stall) & (!dcache_active) ;
     //assign read_req = (status_in[0] | status_in == 0) & bus_en & (| bus_wen);
     assign araddr   = cache_fill_req ?  ca_req_addr :
                       uncache_req ? bus_addr : req_addr_in;
     assign arlen    = ca_req ? 4'h7 : 4'b0;
-    assign arvalid  = read_req | status_in[1];
+    assign arvalid  = read_req  | status_in[1];
     assign read_addr_handshake = arvalid & arready;
     assign read_handshake      = rvalid & rready;
 
@@ -177,8 +177,8 @@ module icache_axi
                          status_in[3] && read_req                     ? READ_REQUEST  :
                          status_in[3] && !read_req                    ? IDLE          :
                          4'b0001;
-    assign req_addr_next = cache_fill_req ?  ca_req_addr :
-                           uncache_req ? bus_addr : req_addr_in;
+    assign req_addr_next = cache_fill_req & !bus_stall ?  ca_req_addr :
+                           uncache_req & !bus_stall ? bus_addr : req_addr_in;
 
     DFFRE #(.WIDTH(4))      stat_next           (.d(status_next), .q(status_out), .en(1), .clk(aclk), .rst_n(aresetn));
     DFFRE #(.WIDTH(32))     req_next            (.d(req_addr_next), .q(req_addr_out), .en(1), .clk(aclk), .rst_n(aresetn));

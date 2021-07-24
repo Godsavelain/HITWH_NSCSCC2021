@@ -25,6 +25,7 @@ module decoder
 
  	output wire [31: 0] 	id_inst_o,
  	output wire 		 	id_inslot_o,
+ 	output wire 			id_valid_o,
  	//to regfile
  	output wire 			id_ren1_o,
  	output wire 			id_ren2_o,
@@ -518,16 +519,16 @@ module decoder
 
     assign id_branch_en_o	= ((inst_beq & EQ) | (inst_bne & NEQ) | (inst_bgez & GEZ) | (inst_bgtz & GZ) 
     						| (inst_blez & LEZ) | (inst_bltz & LZ) | (inst_bgezal & GEZ) | (inst_bltzal & LZ)
-    						| inst_j | inst_jal | inst_jr | inst_jalr) & en & ~id_flush_i;
+    						| inst_j | inst_jal | inst_jr | inst_jalr);
     assign id_next_inslot_o = (inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
-    						| inst_bgezal | inst_bltzal | inst_j   | inst_jal | inst_jr  | inst_jalr) & en &  ~id_flush_i;
+    						| inst_bgezal | inst_bltzal | inst_j   | inst_jal | inst_jr  | inst_jalr);
 
 	assign en 				= ~ id_stall_i;
 
 //to avoid the critical path of ex bypass to id branch to pc
 assign id_is_branch_o = inst_beq | inst_bne | inst_bgez | inst_bgtz | inst_blez | inst_bltz 
 								 | inst_bgezal | inst_bltzal | inst_jr | inst_jalr;
-
+assign id_valid_o = en & ~id_flush_i;
 
 //DFFREs
 DFFRE #(.WIDTH(32))			opr1_next			(.d(id_opr1_next), .q(id_opr1_o), .en(en), .clk(clk), .rst_n(rst_n));

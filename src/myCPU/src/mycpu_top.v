@@ -57,6 +57,7 @@ wire [`ExcE] if_excs_o;
 wire         if_has_exc_o;
 wire [31: 0] if_bus_vaddr;
 wire         if_pcvalid_o;
+wire         if_id_valid_i;
 
 
 //id stage signals
@@ -250,6 +251,7 @@ pc PC
   .icache_axi_stall   (icache_axi_stall   ),
   .icache_stall       (icache_stall       ),
   .branch_en          (if_branch_en       ),
+  .if_id_valid_i      (if_id_valid_i),
 
   .flush_pc_i         (flush_pc_i         ),
   .branch_pc_i        (branch_pc_i        ),
@@ -299,7 +301,7 @@ decoder DECODER
   .id_pc_i            (id_pc_i            ),
   .id_inst_i          (id_inst_i          ),
   .id_inslot_i        (id_inslot_i        ),
-
+  .id_valid_o         (if_id_valid_i      ),
 
   .id_reg1data_i      (id_reg1data_i      ),
   .id_reg2data_i      (id_reg2data_i      ),
@@ -490,8 +492,8 @@ mmu DMMU
   .ConfigK0 (ConfigK0_o)
 );
 
-//assign dbus_cached = dcache_cached;
-assign dbus_cached = 0;
+assign dbus_cached = dcache_cached;
+//assign dbus_cached = 0;
 assign dcache_vir_addr = ex_bus_vaddr;
 
 alu ALU

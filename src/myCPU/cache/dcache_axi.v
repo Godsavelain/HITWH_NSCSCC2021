@@ -53,6 +53,7 @@ module dcache_axi
     input wire                   ca_wreq_i,
     input wire                   uc_rreq_i,
     input wire                   uc_wreq_i,
+    input wire [`WayBus]         cacheline_wdata_i,
 
     //to dcache
     output wire                  dcache_axi_rend,
@@ -85,8 +86,6 @@ module dcache_axi
     assign awprot   = 3'b0;
 
     assign wid      = 4'b0;
-
-    assign wlast    = 1;
 
     assign bready   = 1'b1;
 
@@ -240,7 +239,6 @@ module dcache_axi
     assign arsize   = { 1'b0, bus_load_size};
     assign wstrb    = bus_wen;
     assign wvalid   = status_in[4] | status_in[5];
-    assign wdata    = bus_wdata;
 
     assign dcache_axi_stall = status_in[1] | (status_in[2] & !(rlast & read_handshake)) | read_req | write_req | 
                           status_in[4] | status_in[5] | (status_in[6] & !bvalid) 
@@ -276,4 +274,81 @@ module dcache_axi
 
     end
     
+    //write burst count
+   reg [2:0] write_counter;
+   always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            write_counter <= 0;                 
+        end
+        else if(bvalid)
+        begin
+            write_counter <= 0;
+        end
+        else begin
+            if(write_handshake)
+            begin
+                write_counter <= write_counter+1;
+            end
+        end
+    end
+
+    //burst write
+    reg [`DataBus]burst_wdata[`BlockNum-1:0];
+    always @(*) begin
+        burst_wdata[0] <= cacheline_wdata_i[31: 0];
+        burst_wdata[1] <= cacheline_wdata_i[63:32];
+        burst_wdata[2] <= cacheline_wdata_i[95:64];
+        burst_wdata[3] <= cacheline_wdata_i[127:96];
+        burst_wdata[4] <= cacheline_wdata_i[159:128];
+        burst_wdata[5] <= cacheline_wdata_i[191:160];
+        burst_wdata[6] <= cacheline_wdata_i[223:192];
+        burst_wdata[7] <= cacheline_wdata_i[255:224];
+    end
+    assign wdata = ca_wreq_reg ? burst_wdata[write_counter] : bus_wdata;
+    assign wlast = uc_wreq ? 1 : (write_counter==7);
+
+    //read burst count
+    reg [2:0] read_counter;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            read_counter <= 0;                 
+        end
+        else if(rlast && read_handshake)
+        begin
+            read_counter <= 0;
+        end
+        else begin
+            if(read_handshake)
+            begin
+                read_counter <= read_counter+1;
+            end
+        end
+    end
+    //burst read data
+    reg [`DataBus]burst_rdata[`BlockNum-1:0];
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            burst_rdata[0] <= 0;
+            burst_rdata[1] <= 0; 
+            burst_rdata[2] <= 0; 
+            burst_rdata[3] <= 0; 
+            burst_rdata[4] <= 0;            
+            burst_rdata[5] <= 0; 
+            burst_rdata[6] <= 0; 
+            burst_rdata[7] <= 0; 
+        end
+        else begin
+        burst_rdata[read_counter] <= read_data;
+        end
+    end
+
+    assign dcache_axi_data_o[31: 0]   = burst_rdata[0];
+    assign dcache_axi_data_o[63:32]   = burst_rdata[1];
+    assign dcache_axi_data_o[95:64]   = burst_rdata[2];
+    assign dcache_axi_data_o[127:96]  = burst_rdata[3];
+    assign dcache_axi_data_o[159:128] = burst_rdata[4];
+    assign dcache_axi_data_o[191:160] = burst_rdata[5];
+    assign dcache_axi_data_o[223:192] = burst_rdata[6];
+    assign dcache_axi_data_o[255:224] = read_data;
+
     endmodule

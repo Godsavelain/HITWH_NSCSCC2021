@@ -190,6 +190,7 @@ module mycpu_top
     wire                  cache_rreq;
     wire                  cache_wreq;
     wire                  dcache_stall;
+    wire [`WayBus]        cacheline_wdata_o;
 
 mycpu_core_top MY_TOP
 (
@@ -321,8 +322,7 @@ icache ICACHE
     
     .cpu_stall_o            (icache_stall),
     .icache_rdata_o         (icache_rdata_o),
-    .icache_data_valid      (icache_data_valid)
-                            
+    .icache_data_valid      (icache_data_valid)                          
 );
 
 dcache_axi DCACHE_AXI
@@ -377,6 +377,7 @@ dcache_axi DCACHE_AXI
     .ca_wreq_i               (cache_wreq),
     .uc_rreq_i               (uncache_rreq),
     .uc_wreq_i               (uncache_wreq),
+    .cacheline_wdata_i       (cacheline_wdata_o),
 
     .dcache_axi_rend         (dcache_axi_rend),
     .dcache_axi_wend         (dcache_axi_wend),
@@ -422,6 +423,8 @@ dcache DCACHE
      .uncache_rreq              (uncache_rreq),
      .cache_rreq                (cache_rreq),
      .cache_wreq                (cache_wreq),
+
+     .cacheline_wdata_o         (cacheline_wdata_o),
 
      .dcache_stall_o            (dcache_cache_stall),
      .dcache_rdata_o            (dcache_bus_rdata),

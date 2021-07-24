@@ -37,6 +37,8 @@ module dcache(
     output  wire                cache_rreq,
     output  wire                cache_wreq,
 
+    output  wire [`WayBus]      cacheline_wdata_o,
+
     //to cpu
     output wire                 dcache_stall_o,
     output wire [`DataAddrBus]  dcache_rdata_o,
@@ -53,20 +55,26 @@ module dcache(
     wire [`TagVBus]      s1_tagv_cache_w1_o;
     wire                 s1_valid0_o;
     wire                 s1_valid1_o;
+    wire                 s1_dirty0_o;
+    wire                 s1_dirty1_o;
+    wire                 s1_colli0_o;
+    wire                 s1_colli1_o;
+    wire                 s1_lru_o;
     wire                 s1_cached_o;
     wire                 s1_install_o;
     wire [`DataBus]      s1_data_way0_o;
     wire [`DataBus]      s1_data_way1_o;
+    wire [`DataBus]      s1_colli_wdata_o;
     wire [`DCACHE_STATUS]    s1_s2_status_i;
     wire                 s1_s2wreq_i;
     wire                 s1_s2rreq_i;
+    wire                 s1_write_miss_i;
     wire [ 3: 0]         s1_bus_wen_o;
     wire [`WayBus]       s1_data_o;
-
+    wire [ 5: 0]         s1_virtual_index_o;
 
     wire [31: 0]        cache_data;
-    wire [`WayBus]      s2_hit_wdata_o;
-    wire                s2_hit_wen_o;
+    wire [31: 0]        s1_hit_wdata_i;
 
 
 dcache_s1 DCACHE_S1
@@ -86,25 +94,28 @@ dcache_s1 DCACHE_S1
                  
     .old_virtual_addr_i     (s1_virtual_addr_o),
     .old_physical_addr_i    (s1_physical_addr_o),
+    .old_wen_i              (s1_bus_wen_o),
+    .old_data_i             (dc_bus_wdata_o),
  
     .s1_rend_i              (rend),
     .s1_wend_i              (wend),
     .s1_cacheline_rdata_i   (cacheline_rdata_i),
     
     .dcache_stall_i         (dcache_stall_o),
+    .s1_hit0_i              (s1_hit0_i),
     .s1_hit1_i              (s1_hit1_i),
-    .s1_hit2_i              (s1_hit2_i),
     .s1_s2rreq_i            (s1_s2rreq_i),
     .s1_s2wreq_i            (s1_s2wreq_i),
     .s1_s2_status_i         (s1_s2_status_i),
-    .s1_hit_wen_i           (s2_hit_wen_o),
-    .s1_hit_rdata_i         (s2_hit_wdata_o), 
+    .s1_hit_wdata_i         (s1_hit_wdata_i), 
+    .s1_write_miss_i        (s1_write_miss_i),
  
     .s1_cached_o            (s1_cached_o),
     .s1_bus_wen_o           (s1_bus_wen_o),
     .s1_bus_wdata_o         (dc_bus_wdata_o),
     .s1_bus_store_size_o    (dc_bus_store_size_o),
     .s1_bus_load_size_o     (dc_bus_load_size_o),
+    .s1_cacheline_wdata_o   (cacheline_wdata_o),
     
     .s1_virtual_addr_o      (s1_virtual_addr_o),
     .s1_physical_addr_o     (s1_physical_addr_o),
@@ -113,6 +124,11 @@ dcache_s1 DCACHE_S1
     .s1_tagv_cache_w1_o     (s1_tagv_cache_w1_o),
     .s1_valid0_o            (s1_valid0_o),
     .s1_valid1_o            (s1_valid1_o),
+    .s1_dirty0_o            (s1_dirty0_o),
+    .s1_dirty1_o            (s1_dirty1_o),
+    .s1_colli0_o            (s1_colli0_o),
+    .s1_colli1_o            (s1_colli1_o),
+    .s1_lru_o               (s1_lru_o),
     .s1_install_o           (s1_install_o),
 
     .s1_cache_rreq_o        (s1_cache_rreq_o),
@@ -120,13 +136,13 @@ dcache_s1 DCACHE_S1
     .s1_uc_rreq_o           (s1_uc_rreq_o),
     .s1_uc_wreq_o           (s1_uc_wreq_o),
 
-    .s1_data_o              (s1_data_o), 
+    .s1_colli_wdata_o       (s1_colli_wdata_o),
     .s1_data_way0_o         (s1_data_way0_o),
     .s1_data_way1_o         (s1_data_way1_o)
 
 );
-
-    wire [`DCACHE_STATUS]  dcache_status_o;
+wire [`DCACHE_STATUS]  dcache_status_o;
+assign dc_bus_wen_o = s1_bus_wen_o;
 
 dcache_s2 DCACHE_S2
 (
@@ -134,7 +150,6 @@ dcache_s2 DCACHE_S2
     .rst_n                  (rst_n),
     
     .s2_bus_wen_i           (s1_bus_wen_o),
-    .s2_virtual_addr_i      (s1_virtual_addr_o),
     .s2_physical_addr_i     (s1_physical_addr_o),
     .s2_cache_rreq_i        (s1_cache_rreq_o),
     .s2_cache_wreq_i        (s1_cache_wreq_o),
@@ -144,11 +159,18 @@ dcache_s2 DCACHE_S2
     .s2_tagv_cache_w1_i     (s1_tagv_cache_w1_o),
     .s2_valid0_i            (s1_valid0_o),
     .s2_valid1_i            (s1_valid1_o),
+    .s2_dirty0_i            (s1_dirty0_o),
+    .s2_dirty1_i            (s1_dirty1_o),
+    .s2_colli0_i            (s1_colli0_o),
+    .s2_colli1_i            (s1_colli1_o),
+    .s2_lru_i               (s1_lru_o),
     .s2_cached_i            (s1_cached_o),
     .s2_install_i           (s1_install_o),
 
     .s2_data_way0_i         (s1_data_way0_o),
     .s2_data_way1_i         (s1_data_way1_o), 
+    .s2_colli_wdata_i       (s1_colli_wdata_o),
+    .s2_bus_wdata_i         (dc_bus_wdata_o),
 
     .s2_rend_i              (rend),
     .s2_wend_i              (wend),
@@ -156,20 +178,19 @@ dcache_s2 DCACHE_S2
     
     .s2_status_o            (s1_s2_status_i),
     
-    .s2_axi_rreq_o          (cache_rreq),
-    .s2_axi_wreq_o          (cache_wreq),
+    .s2_ca_rreq_o           (cache_rreq),
+    .s2_ca_wreq_o           (cache_wreq),
     .s2_uc_rreq_o           (uncache_rreq),
     .s2_uc_wreq_o           (uncache_wreq),
     .s2_addr_o              (dc_bus_addr_o),
-    .s2_bus_wen_o           (dc_bus_wen_o),
     
     .dcache_stall_o         (dcache_stall_o),
+    .s2_hit0_o              (s1_hit0_i),
     .s2_hit1_o              (s1_hit1_i),
-    .s2_hit2_o              (s1_hit2_i),
     .s2_rreq_o              (s1_s2rreq_i),
     .s2_wreq_o              (s1_s2wreq_i),
-    .s2_hit_wen_o           (s2_hit_wen_o),
-    .s2_hit_wdata_o         (s2_hit_wdata_o),
+    .s2_hit_wdata_o         (s1_hit_wdata_i),
+    .s2_write_miss_o        (s1_write_miss_i),
 
     .s2_cache_data_o        (cache_data),
     .dcache_data_valid      (dcache_data_valid),

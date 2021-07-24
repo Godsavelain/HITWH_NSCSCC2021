@@ -155,6 +155,7 @@ module mem
 	assign  mem_pc_next			= mem_pc_i;
 	assign  mem_inst_wb_nofwd_next = mem_flush_i ? 0 : mem_inst_wb_nofwd_i;
 
+	assign mem_valid_o	= en & (~mem_flush_i);
 
 //for bypass
 
