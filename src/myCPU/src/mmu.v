@@ -22,6 +22,6 @@ wire kseg3  =  mode[7];
 assign paddr = (kseg0 | kseg1) ? {3'b000, vaddr[28:0]} :
                 vaddr;
 
-assign cached = kseg0 & ((ConfigK0 ^ 3'b011) == 0) | kseg2 | kseg3 | kuseg;
-
+ assign cached = kseg0 & ((ConfigK0 ^ 3'b011) == 0) | kseg2 | kseg3 | kuseg;
+//assign cached = kseg2 | kseg3 | kuseg;
 endmodule

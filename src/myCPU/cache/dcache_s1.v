@@ -55,8 +55,8 @@ module dcache_s1(
     output wire                 s1_valid1_o,
     output wire                 s1_dirty0_o,
     output wire                 s1_dirty1_o,
-    output wire                 s1_colli0_o,//read/write collision
-    output wire                 s1_colli1_o,
+    output wire [`BlockNum-1:0] s1_colli0_o,//read/write collision
+    output wire [`BlockNum-1:0] s1_colli1_o,
     output wire                 s1_lru_o,
     output wire                 s1_install_o,
 
@@ -228,23 +228,23 @@ module dcache_s1(
     wire way1_colli_6;
     wire way1_colli_7;
 
-    assign way0_colli_0 = way0_wen0 & ((bank ^ 3'b000)==0);
-    assign way0_colli_1 = way0_wen1 & ((bank ^ 3'b001)==0);
-    assign way0_colli_2 = way0_wen2 & ((bank ^ 3'b010)==0);
-    assign way0_colli_3 = way0_wen3 & ((bank ^ 3'b011)==0);
-    assign way0_colli_4 = way0_wen4 & ((bank ^ 3'b100)==0);
-    assign way0_colli_5 = way0_wen5 & ((bank ^ 3'b101)==0);
-    assign way0_colli_6 = way0_wen6 & ((bank ^ 3'b110)==0);
-    assign way0_colli_7 = way0_wen7 & ((bank ^ 3'b111)==0);
+    assign way0_colli_0 = way0_wen0 && ((bank ^ 3'b000)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way0_colli_1 = way0_wen1 && ((bank ^ 3'b001)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way0_colli_2 = way0_wen2 && ((bank ^ 3'b010)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way0_colli_3 = way0_wen3 && ((bank ^ 3'b011)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way0_colli_4 = way0_wen4 && ((bank ^ 3'b100)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way0_colli_5 = way0_wen5 && ((bank ^ 3'b101)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way0_colli_6 = way0_wen6 && ((bank ^ 3'b110)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way0_colli_7 = way0_wen7 && ((bank ^ 3'b111)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
 
-    assign way1_colli_0 = way1_wen0 & ((bank ^ 3'b000)==0);
-    assign way1_colli_1 = way1_wen1 & ((bank ^ 3'b001)==0);
-    assign way1_colli_2 = way1_wen2 & ((bank ^ 3'b010)==0);
-    assign way1_colli_3 = way1_wen3 & ((bank ^ 3'b011)==0);
-    assign way1_colli_4 = way1_wen4 & ((bank ^ 3'b100)==0);
-    assign way1_colli_5 = way1_wen5 & ((bank ^ 3'b101)==0);
-    assign way1_colli_6 = way1_wen6 & ((bank ^ 3'b110)==0);
-    assign way1_colli_7 = way1_wen7 & ((bank ^ 3'b111)==0);
+    assign way1_colli_0 = way1_wen0 && ((bank ^ 3'b000)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way1_colli_1 = way1_wen1 && ((bank ^ 3'b001)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way1_colli_2 = way1_wen2 && ((bank ^ 3'b010)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way1_colli_3 = way1_wen3 && ((bank ^ 3'b011)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way1_colli_4 = way1_wen4 && ((bank ^ 3'b100)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way1_colli_5 = way1_wen5 && ((bank ^ 3'b101)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way1_colli_6 = way1_wen6 && ((bank ^ 3'b110)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
+    assign way1_colli_7 = way1_wen7 && ((bank ^ 3'b111)==0) && (virtual_index == old_virtual_addr_i[`IndexBus]);
     
     //Tag
     wire [31: 0] tag0;
@@ -256,7 +256,7 @@ module dcache_s1(
     assign tag_in            = {old_physical_addr_i[`TagBus], 11'b0};
 
     //for debug 
-    wire old_index;
+    wire [ 5: 0] old_index;
     assign old_index = old_virtual_addr_i[`IndexBus];
 
     simple_dual_ram TagV0 (.clka(clk),.ena(|wea_way0),.wea(wea_way0),
@@ -404,8 +404,8 @@ module dcache_s1(
     wire                 s1_valid1_next;
     wire                 s1_dirty0_next;
     wire                 s1_dirty1_next;
-    wire                 s1_colli0_next;
-    wire                 s1_colli1_next;
+    wire [`BlockNum-1:0] s1_colli0_next;
+    wire [`BlockNum-1:0] s1_colli1_next;
     wire [ 5: 0]         s1_virtual_index_next;
 
     wire                 s1_install_next;
@@ -425,10 +425,10 @@ module dcache_s1(
     assign  s1_valid1_next         = valid1;
     assign  s1_dirty0_next         = dirty0;
     assign  s1_dirty1_next         = dirty1;
-    assign  s1_colli0_next         = way0_colli_0 | way0_colli_1 | way0_colli_2 | way0_colli_3 
-                                    |way0_colli_4 | way0_colli_5 | way0_colli_6 | way0_colli_7 ;
-    assign  s1_colli1_next         = way1_colli_0 | way1_colli_1 | way1_colli_2 | way1_colli_3 
-                                    |way1_colli_4 | way1_colli_5 | way1_colli_6 | way1_colli_7 ;
+    assign  s1_colli0_next         = {way0_colli_0 , way0_colli_1 , way0_colli_2 , way0_colli_3 
+                                    ,way0_colli_4 , way0_colli_5 , way0_colli_6 , way0_colli_7};
+    assign  s1_colli1_next         = {way1_colli_0 , way1_colli_1 , way1_colli_2 , way1_colli_3 
+                                    ,way1_colli_4 , way1_colli_5 , way1_colli_6 , way1_colli_7} ;
 
     assign  s1_install_next        = stall;
 
@@ -456,8 +456,8 @@ DFFRE #(.WIDTH(1))      valid2_next          (.d(s1_valid1_next), .q(s1_valid1_o
 
 DFFRE #(.WIDTH(1))      dirty0_next          (.d(s1_dirty0_next), .q(s1_dirty0_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))      dirty1_next          (.d(s1_dirty1_next), .q(s1_dirty1_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))      colli0_next          (.d(s1_colli0_next), .q(s1_colli0_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))      colli1_next          (.d(s1_colli1_next), .q(s1_colli1_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(`BlockNum))  colli0_next      (.d(s1_colli0_next), .q(s1_colli0_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(`BlockNum))  colli1_next      (.d(s1_colli1_next), .q(s1_colli1_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))      install_next         (.d(s1_install_next), .q(s1_install_o), .en(1'b1), .clk(clk), .rst_n(rst_n));
 
 DFFRE #(.WIDTH(1))      cached_next          (.d(s1_cached_next), .q(s1_cached_o), .en(en), .clk(clk), .rst_n(rst_n));

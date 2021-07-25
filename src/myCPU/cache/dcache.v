@@ -57,8 +57,8 @@ module dcache(
     wire                 s1_valid1_o;
     wire                 s1_dirty0_o;
     wire                 s1_dirty1_o;
-    wire                 s1_colli0_o;
-    wire                 s1_colli1_o;
+    wire [`BlockNum-1:0] s1_colli0_o;
+    wire [`BlockNum-1:0] s1_colli1_o;
     wire                 s1_lru_o;
     wire                 s1_cached_o;
     wire                 s1_install_o;

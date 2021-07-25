@@ -16,8 +16,8 @@ module dcache_s2(
     input wire                 s2_valid1_i,
     input wire                 s2_dirty0_i,
     input wire                 s2_dirty1_i,
-    input wire                 s2_colli0_i,
-    input wire                 s2_colli1_i,
+    input wire [`BlockNum-1:0] s2_colli0_i,
+    input wire [`BlockNum-1:0] s2_colli1_i,
     input wire                 s2_lru_i,
 
     input wire                 s2_cached_i,
@@ -116,8 +116,8 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     wire [`TagVBus]  tag1;
     wire hit1      = (s2_tagv_cache_w0_i[`TagVBus]==s2_physical_addr_i[`TagBus] && s2_valid0_i==`Valid)? `HitSuccess : `HitFail;
     wire hit2      = (s2_tagv_cache_w1_i[`TagVBus]==s2_physical_addr_i[`TagBus] && s2_valid1_i==`Valid)? `HitSuccess : `HitFail;
-    assign s2_hit0_o = hit1;
-    assign s2_hit1_o = hit2;  
+    assign s2_hit0_o = hit1 && !s2_install_i;
+    assign s2_hit1_o = hit2 && !s2_install_i;  
     //axi 
 
     wire [31: 0] write_addr;
@@ -159,10 +159,13 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     assign s2_write_miss_o = !(hit1 | hit2) && !s2_install_i && s2_cache_wreq_i;
 
     //get correct data
+    wire[ 2: 0] bank;
+    assign bank = s2_physical_addr_i[4:2];
+
     wire [31:0] data0;
     wire [31:0] data1;
-    assign data0 = s2_colli0_i ? s2_colli_wdata_i : s2_data_way0_i;
-    assign data1 = s2_colli1_i ? s2_colli_wdata_i : s2_data_way1_i;
+    assign data0 = s2_colli0_i[bank] ? s2_colli_wdata_i : s2_data_way0_i;
+    assign data1 = s2_colli1_i[bank] ? s2_colli_wdata_i : s2_data_way1_i;
 
     //to cpu
     reg [`DataBus] read_data;//data to be sent to cpu when read transfer ends

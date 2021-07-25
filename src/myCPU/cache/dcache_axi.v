@@ -235,8 +235,8 @@ module dcache_axi
     //end of write
     assign dcache_axi_wend = bvalid ;
 
-    assign awsize   = { 1'b0, bus_store_size};
-    assign arsize   = { 1'b0, bus_load_size};
+    assign awsize   = ca_wreq ? 3'b010 : { 1'b0, bus_store_size};
+    assign arsize   = ca_rreq ? 3'b010 : { 1'b0, bus_load_size};
     assign wstrb    = bus_wen;
     assign wvalid   = status_in[4] | status_in[5];
 
@@ -338,7 +338,7 @@ module dcache_axi
             burst_rdata[7] <= 0; 
         end
         else begin
-        burst_rdata[read_counter] <= read_data;
+        burst_rdata[read_counter] <= rdata;
         end
     end
 
@@ -349,6 +349,6 @@ module dcache_axi
     assign dcache_axi_data_o[159:128] = burst_rdata[4];
     assign dcache_axi_data_o[191:160] = burst_rdata[5];
     assign dcache_axi_data_o[223:192] = burst_rdata[6];
-    assign dcache_axi_data_o[255:224] = read_data;
+    assign dcache_axi_data_o[255:224] = rdata;
 
     endmodule
