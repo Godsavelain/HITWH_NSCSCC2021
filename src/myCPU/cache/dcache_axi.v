@@ -294,7 +294,9 @@ module dcache_axi
 
     //burst write
     reg [`DataBus]burst_wdata[`BlockNum-1:0];
-    always @(*) begin
+    always @(posedge aclk) begin
+    if(ca_wreq_i)
+        begin
         burst_wdata[0] <= cacheline_wdata_i[31: 0];
         burst_wdata[1] <= cacheline_wdata_i[63:32];
         burst_wdata[2] <= cacheline_wdata_i[95:64];
@@ -303,6 +305,7 @@ module dcache_axi
         burst_wdata[5] <= cacheline_wdata_i[191:160];
         burst_wdata[6] <= cacheline_wdata_i[223:192];
         burst_wdata[7] <= cacheline_wdata_i[255:224];
+        end
     end
     assign wdata = ca_wreq_reg ? burst_wdata[write_counter] : bus_wdata;
     assign wlast = uc_wreq ? 1 : (write_counter==7);

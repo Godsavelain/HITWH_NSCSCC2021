@@ -1,5 +1,14 @@
 TO DO LIST：icache通过系统测试
 
+###### 2021.7.26
+
+* 修复dcache中的bug，通过全部性能测试
+* 修复Bug如下：
+* * 向AXI写回数据的时机不对，应将输入AXI的要写的数据寄存起来
+  * 更新dirty的时机有问题，当读入新的cacheline且包含对此cacheline的写时（对应上一次的write miss），应更新dirty为1。
+
+目前性能测试跑分43.68，频率95M
+
 ###### 2021.7.25
 
 * 修复dcache中的bug如下：

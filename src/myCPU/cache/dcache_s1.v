@@ -327,10 +327,22 @@ module dcache_s1(
         begin
             if(LRU_pick == 1)
                 begin
+                if(write_miss)
+                begin
+                    ca_dirty1[old_virtual_addr_i[`IndexBus]] <= 1;
+                end
+                else begin
                     ca_dirty1[old_virtual_addr_i[`IndexBus]] <= 0;
+                    end
                 end
             else begin
+                    if(write_miss)
+                begin
+                    ca_dirty0[old_virtual_addr_i[`IndexBus]] <= 1;
+                end
+                else begin
                     ca_dirty0[old_virtual_addr_i[`IndexBus]] <= 0;
+                    end
             end
         end
         else if(s1_s2wreq_i)
@@ -425,10 +437,10 @@ module dcache_s1(
     assign  s1_valid1_next         = valid1;
     assign  s1_dirty0_next         = dirty0;
     assign  s1_dirty1_next         = dirty1;
-    assign  s1_colli0_next         = {way0_colli_0 , way0_colli_1 , way0_colli_2 , way0_colli_3 
-                                    ,way0_colli_4 , way0_colli_5 , way0_colli_6 , way0_colli_7};
-    assign  s1_colli1_next         = {way1_colli_0 , way1_colli_1 , way1_colli_2 , way1_colli_3 
-                                    ,way1_colli_4 , way1_colli_5 , way1_colli_6 , way1_colli_7} ;
+    assign  s1_colli0_next         = {way0_colli_7 , way0_colli_6 , way0_colli_5 , way0_colli_4 
+                                    ,way0_colli_3 , way0_colli_2 , way0_colli_1 , way0_colli_0};
+    assign  s1_colli1_next         = {way1_colli_7 , way1_colli_6 , way1_colli_5 , way1_colli_4 
+                                    ,way1_colli_3 , way1_colli_2 , way1_colli_1 , way1_colli_0} ;
 
     assign  s1_install_next        = stall;
 

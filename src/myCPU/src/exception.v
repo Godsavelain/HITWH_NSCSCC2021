@@ -3,7 +3,7 @@
 module exception
 (
     input wire  [31: 0]  exc_pc_i,//进入PC
-	input wire 			     exc_mem_en_i,//当前有写请求
+	input wire 			 exc_mem_en_i,//当前有写请求
     input  wire [31: 0]  exc_m_addr_i,
     input wire  [31: 0]  exc_EPC_i,
     input wire  [31: 0]  exc_ErrorEPC_i,//from cp0

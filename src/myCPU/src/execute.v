@@ -326,7 +326,4 @@ DFFRE #(.WIDTH(1))		inst_wb_nofwd_next	(.d(ex_inst_wb_nofwd_next), .q(ex_inst_wb
 //除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指�?
 assign ex_stallreq_o = (ex_divinst_i & mdu_is_active) | (ex_mduinst_i & mdu_div_active);
 
-
-
-
 endmodule
