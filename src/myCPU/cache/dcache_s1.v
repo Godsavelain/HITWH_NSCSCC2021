@@ -259,11 +259,11 @@ module dcache_s1(
     wire [ 5: 0] old_index;
     assign old_index = old_virtual_addr_i[`IndexBus];
 
-    simple_dual_ram TagV0 (.clka(clk),.ena(|wea_way0),.wea(wea_way0),
+    simple_dual_dram TagV0 (.clka(clk),.rst_n(rst_n),.ena(|wea_way0),.wea(wea_way0),
         .addra(old_virtual_addr_i[`IndexBus]), .dina(tag_in),
         .clkb(clk),.addrb(virtual_index),.doutb(tag0));
 
-    simple_dual_ram TagV1 (.clka(clk),.ena(|wea_way1),.wea(wea_way1),
+    simple_dual_dram TagV1 (.clka(clk),.rst_n(rst_n),.ena(|wea_way1),.wea(wea_way1),
         .addra(old_virtual_addr_i[`IndexBus]), .dina(tag_in),
         .clkb(clk),.addrb(virtual_index),.doutb(tag1)); 
 

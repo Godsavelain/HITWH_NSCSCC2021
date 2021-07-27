@@ -38,6 +38,7 @@ module execute
     input wire [ 7: 0]  	ex_c0addr_i,
 
     input wire 				ex_inst_wb_nofwd_i,
+    input wire 				ex_intr_dis_i,
    
    //from mdu 
     input wire 				mdu_is_active,//mdu单元正在工作
@@ -68,7 +69,8 @@ module execute
     output wire [31: 0] 	ex_memwdata_o,	//data_sram_wdata
     output wire [ 1: 0]		ex_bus_store_size,
     output wire [ 1: 0]		ex_bus_load_size,
-    output wire 			ex_storeinst_o, //could cause store
+
+    output wire 			ex_intr_dis_o, //inst in mem can not suffer an intr
 
     output wire [`MMOP] 	ex_memop_o,
     output wire [31: 0] 	ex_bad_memaddr_o,	//for adress exception
@@ -117,6 +119,7 @@ module execute
     wire 		[31: 0]		ex_bad_memaddr_next;  
     wire					ex_pcvalid_next;
     wire 					ex_inst_wb_nofwd_next;
+    wire 					ex_intr_dis_next;
 
 //useful values
 		
@@ -191,7 +194,8 @@ module execute
     assign ex_c0addr_next	= ex_flush_i ? 0 : ex_c0addr_i;
     assign ex_c0_wdata_next = ex_flush_i ? 0 : ex_rtvalue_i;
     assign ex_pcvalid_next	= ex_flush_i ? 0 : ex_pcvalid_i;
-    assign ex_inst_wb_nofwd_next = ex_flush_i ? 0 : ex_inst_wb_nofwd_i ;
+    assign ex_inst_wb_nofwd_next = ex_flush_i ? 0 : ex_inst_wb_nofwd_i;
+    assign ex_intr_dis_next = ex_intr_dis_i;
 
     //assign ex_has_exc_next	= ex_flush_i ? 0 :ex_has_exc_i | ov | ex_excs_next[3] | ex_excs_next[2];
     assign ex_has_exc		= ex_has_exc_i | ov | (ex_memaddr_low[0] & op_sh) | ((ex_memaddr_low[1:0] != 00) & op_sw)
@@ -250,7 +254,6 @@ module execute
 							  op_swl? ex_memwen_swl:
 							  op_swr? ex_memwen_swr:
 							  4'b0000; 	    			//写使�?	
-	assign ex_storeinst_o   = op_sb | op_sh | op_sw | op_swl | op_swr ;
 
 	//assign ex_memaddr_o 	= {ex_alures_i[31:2],2'b00};		//data_sram_addr  访存地址通过alu计算
 	assign ex_memaddr_o 	= ex_alures_i;		//data_sram_addr  访存地址通过alu计算
@@ -320,7 +323,7 @@ DFFRE #(.WIDTH(8))		c0addr_next			(.d(ex_c0addr_next), .q(ex_c0addr_o), .en(en),
 DFFRE #(.WIDTH(32))		badvaddr_next		(.d(ex_bad_memaddr_next), .q(ex_bad_memaddr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		pcvalid_next		(.d(ex_pcvalid_next), .q(ex_pcvalid_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))		inst_wb_nofwd_next	(.d(ex_inst_wb_nofwd_next), .q(ex_inst_wb_nofwd_o), .en(en), .clk(clk), .rst_n(rst_n));
-
+DFFRE #(.WIDTH(1))		intr_dis_next		(.d(ex_intr_dis_next), .q(ex_intr_dis_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 
 //除法指令必须等mdu为空时进行，进行除法运算时不能移入新的乘法指�?

@@ -53,6 +53,8 @@ module decoder
  	output wire [`TOP ] 	id_tlbop_o,
     output wire [`COP ] 	id_cacheop_o,
 
+    output wire 			id_intr_dis_o,
+
     //about C0
     output wire          	id_c0wen_o,
     output wire          	id_c0ren_o,
@@ -98,6 +100,8 @@ module decoder
  	wire [`TOP ] 		id_tlbop_next;
     wire [`COP ] 		id_cacheop_next;
     wire 				id_nofwd_next;
+
+    wire 				id_intr_dis_next;
 
     wire          		id_c0wen_next;
     wire          		id_c0ren_next;
@@ -476,6 +480,7 @@ module decoder
 	assign id_c0addr_next 	= {id_inst_i[15:11],id_inst_i[2:0]};
 	assign id_pcvalid_next  = id_flush_i ? 0 : id_pcvalid_i;
 	assign id_inst_wb_nofwd_next = id_flush_i ? 0 : inst_mfhi | inst_mflo | inst_mul;
+	assign id_intr_dis_next = inst_div | inst_divu | (|mem_op);
 
 	//for branch outputs
 	wire [31: 0] j_target;	//j and jal
@@ -565,7 +570,7 @@ DFFRE #(.WIDTH(1))			pcvalid_next		(.d(id_pcvalid_next), .q(id_pcvalid_o), .en(e
 
 DFFRE #(.WIDTH(1))			inst_wb_nofwd_next	(.d(id_inst_wb_nofwd_next), .q(id_inst_wb_nofwd_o), .en(en), .clk(clk), .rst_n(rst_n));
 
-
+DFFRE #(.WIDTH(1))			intr_dis_next		(.d(id_intr_dis_next), .q(id_intr_dis_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 //å°šæœªå®žçŽ°
 

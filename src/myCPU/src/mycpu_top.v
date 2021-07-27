@@ -82,6 +82,7 @@ wire [ 7: 0] id_c0addr_o;
 wire         id_is_branch_o;
 wire         id_pcvalid_o;
 wire         id_inst_wb_nofwd_o;
+wire         id_intr_dis_o;
 
 //ex stage signals
 wire [31: 0] ex_inst_i;
@@ -96,7 +97,7 @@ wire         ex_divinst_i;
 wire         ex_mduinst_i;
 wire [31: 0] ex_offset_i;
 wire         ex_nofwd_i;
-wire         ex_storeinst_o;
+wire         ex_intr_dis_o;
 wire         ex_inst_wb_nofwd_o;
 
 wire [`AOP]  ex_aluop_i;
@@ -343,6 +344,8 @@ decoder DECODER
   .id_tlbop_o         (ex_tlbop_i         ),
   .id_cacheop_o       (ex_cacheop_i       ),
 
+  .id_intr_dis_o      (id_intr_dis_o),
+
   .id_c0wen_o         (id_c0wen_o         ),
   .id_c0ren_o         (id_c0ren_o         ),
   .id_c0addr_o        (id_c0addr_o        ),
@@ -434,7 +437,9 @@ execute EXECUTE
   .ex_c0ren_i         (id_c0ren_o         ),
   .ex_c0addr_i        (id_c0addr_o        ), 
 
-  .ex_inst_wb_nofwd_i (id_inst_wb_nofwd_o ),         
+  .ex_inst_wb_nofwd_i (id_inst_wb_nofwd_o ),
+
+  .ex_intr_dis_i      (id_intr_dis_o      ),         
 
   .mdu_is_active      (is_active          ),
   .mdu_div_active     (mdu_div_active     ),
@@ -460,8 +465,8 @@ execute EXECUTE
   .ex_memaddr_o       (ex_bus_vaddr        ), 
   .ex_memwdata_o      (dcache_bus_wdata    ),
   .ex_bus_store_size  (dcache_bus_store_size     ),
-  .ex_bus_load_size  (dcache_bus_load_size),
-  .ex_storeinst_o     (ex_storeinst_o     ), 
+  .ex_bus_load_size   (dcache_bus_load_size),
+  .ex_intr_dis_o      (ex_intr_dis_o     ), 
   .ex_bad_memaddr_o   (ex_bad_memaddr_o   ), 
 
   .ex_inst_o          (mem_inst_i         ),
@@ -539,7 +544,8 @@ mdu MDU
 exception EXC
 (
   .exc_pc_i           (mem_pc_i),//进入PC
-  .exc_mem_en_i       (ex_storeinst_o),//当前有写请求
+  .exc_ex_intr_dis_i  (id_intr_dis_o),//当前有写请求
+  .exc_mem_intr_dis_i (ex_intr_dis_o),
   .exc_m_addr_i       (ex_bad_memaddr_o),
   .exc_EPC_i          (exc_EPC_i),
   .exc_ErrorEPC_i     (exc_ErrorEPC_i),//from cp0

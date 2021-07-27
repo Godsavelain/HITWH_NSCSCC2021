@@ -108,8 +108,10 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     end
         
     //Stall
-    assign dcache_stall_o = s2_ca_rreq_o | s2_ca_wreq_o | s2_uc_rreq_o | s2_uc_wreq_o 
-                            | dcache_status_i[1] | dcache_status_i[2] | dcache_status_i[3] | dcache_status_i[4] ;
+    // assign dcache_stall_o = s2_ca_rreq_o | s2_ca_wreq_o | s2_uc_rreq_o | s2_uc_wreq_o 
+    //                         | dcache_status_i[1] | dcache_status_i[2] | dcache_status_i[3] | dcache_status_i[4] ;
+    assign dcache_stall_o = dcache_status_i[1] | dcache_status_i[2] | dcache_status_i[3] | dcache_status_i[4] | write_back_end
+                            | s2_uc_rreq_o | s2_uc_wreq_o | ((s2_cache_rreq_i | s2_cache_wreq_i) & !(hit1 | hit2) & !s2_install_i)  ;
 
     //hit logic
     wire [`TagVBus]  tag0;

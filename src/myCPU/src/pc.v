@@ -75,7 +75,8 @@ assign inst_sram_wen   = 4'h0;
 assign inst_sram_wdata = 32'b0;
 //assign inst_sram_en   =!(if_stall_i||pc_flush_i) ;
 //assign inst_sram_en   =!pc_flush_i;
-assign inst_sram_en   = !if_stall_i;
+//assign inst_sram_en   = !if_stall_i;
+assign inst_sram_en   = 1;
 assign pc_next 		=  !rst_n	? 32'hbfbffffc		:			   
 				   		// stall	? pc_next 			:
 				   		//pc_flush_i	? flush_pc_i	:
