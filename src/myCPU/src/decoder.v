@@ -64,9 +64,6 @@ module decoder
 
  	//for optimization
  	output wire 			id_is_branch_o,
- 	input  wire [31: 0]		id_res_from_ex_i,
- 	input  wire 			id_ex_res_as1_i,
- 	input  wire 			id_ex_res_as2_i,
 
  	input  wire [31: 0]     raw_data1_i,  
     input  wire [31: 0]     raw_data2_i,
@@ -513,8 +510,8 @@ module decoder
     assign id_nofwd_next 	= id_flush_i ? 0 : (| mem_op) | inst_mfhi | inst_mflo | inst_mfc0 |inst_mul;
 
 
-	assign branch_opr1 = id_ex_res_as1_i ? id_res_from_ex_i : raw_data1_i;
-	assign branch_opr2 = id_ex_res_as2_i ? id_res_from_ex_i : raw_data2_i;
+	assign branch_opr1 = raw_data1_i;
+	assign branch_opr2 = raw_data2_i;
     assign LZ     = branch_opr1[31];               
     assign GEZ    = ~LZ;                      
     assign LEZ    = (LZ || (branch_opr1 == 0));    

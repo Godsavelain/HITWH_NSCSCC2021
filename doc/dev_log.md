@@ -1,4 +1,8 @@
-TO DO LIST：icache通过系统测试
+TO DO LIST：优化cache，合并burst写与burst读请求
+
+###### 2021.7.28
+
+* 优化时序到112M，跑分51.17
 
 ###### 2021.7.27
 
@@ -7,7 +11,7 @@ TO DO LIST：icache通过系统测试
 ###### 2021.7.26
 
 * 修复dcache中的bug，通过全部性能测试
-* 修复Bug如下：
+  * 修复Bug如下：	
 * * 向AXI写回数据的时机不对，应将输入AXI的要写的数据寄存起来
   * 更新dirty的时机有问题，当读入新的cacheline且包含对此cacheline的写时（对应上一次的write miss），应更新dirty为1。
 

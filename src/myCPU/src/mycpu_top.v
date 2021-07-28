@@ -64,9 +64,7 @@ wire         if_id_valid_i;
 wire [31: 0] id_pc_i;
 wire [31: 0] id_inst_i;
 wire         id_inslot_i;
-wire         id_ex_res_as1_i;
-wire         id_ex_res_as2_i;
-wire [31: 0] id_res_from_ex_i;
+
 wire [31: 0] raw_data1_i;
 wire [31: 0] raw_data2_i;
 
@@ -353,9 +351,6 @@ decoder DECODER
   .id_stallreq_o      (                   ),
 
   .id_is_branch_o     (id_is_branch_o     ),
-  .id_res_from_ex_i   (id_res_from_ex_i   ),
-  .id_ex_res_as1_i    (id_ex_res_as1_i    ),
-  .id_ex_res_as2_i    (id_ex_res_as2_i    ),
 
   .raw_data1_i        (raw_data1_i),
   .raw_data2_i        (raw_data2_i),
@@ -394,9 +389,7 @@ regfile REGFILE
   .stallreq           (streq_id_i         ),
 
   .id_is_branch       (id_is_branch_o     ),
-  .ex_data_to_id_o    (id_res_from_ex_i),
-  .id_ex_res_as1_o    (id_ex_res_as1_i),
-  .id_ex_res_as2_o    (id_ex_res_as2_i),
+
   .raw_data1_o        (raw_data1_i),
   .raw_data2_o        (raw_data2_i)
 );

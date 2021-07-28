@@ -33,9 +33,6 @@ module regfile
 
     //当ID为branch指令且存在数据冲突时暂停一拍
     input   wire            id_is_branch,
-    output  wire [31: 0]    ex_data_to_id_o,
-    output  wire            id_ex_res_as1_o,
-    output  wire            id_ex_res_as2_o,
 
     //分割信号
     output  wire [31: 0]    raw_data1_o,  
@@ -64,9 +61,6 @@ module regfile
     wire   r2_wb_haz;
 
     wire   branch_stall;
-    wire   id_ex_res_as1_next;
-    wire   id_ex_res_as2_next;
-    wire [31: 0] ex_data_to_id_next;
 
     always @(posedge clk) begin
         if(we[0])  GPR[waddr][ 7: 0] <= wdata[ 7: 0];
@@ -130,10 +124,7 @@ module regfile
     assign branch_stall   = id_is_branch && ex_haz ;
 
 
-//当ID段为branch且与EX段存在相关时暂停一拍，将旁路数据与控制信号送往ID段，下一周期ID段再根据送入数据进行分支地址计算
-    assign ex_data_to_id_next   =   ex_wdata;
-    assign id_ex_res_as1_next   =   r1_ex_haz && id_is_branch;
-    assign id_ex_res_as2_next   =   r2_ex_haz && id_is_branch;
+//当ID段为branch且与EX段存在相关时暂停一拍,送往ID branch的数据不必考虑EX段的旁路
 
     assign raw_data1_o          =   r1_mem_haz  ? mem_wdata : 
                                     r1_wb_haz   ? lrdata1   :
@@ -142,7 +133,4 @@ module regfile
                                     r2_wb_haz   ? lrdata2   :
                                     GPR[raddr2];
 
-    DFFRE #(.WIDTH(1))   ex_bp1_next   (.d(id_ex_res_as1_next), .q(id_ex_res_as1_o), .en(1), .clk(clk), .rst_n(rst_n));
-    DFFRE #(.WIDTH(1))   ex_bp2_next   (.d(id_ex_res_as2_next), .q(id_ex_res_as2_o), .en(1), .clk(clk), .rst_n(rst_n));
-    DFFRE #(.WIDTH(32))  ex_bpdata_next   (.d(ex_data_to_id_next), .q(ex_data_to_id_o), .en(1), .clk(clk), .rst_n(rst_n)); 
 endmodule
