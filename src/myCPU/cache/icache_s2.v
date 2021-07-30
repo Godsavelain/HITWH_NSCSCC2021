@@ -12,6 +12,7 @@ module icache_s2(
     input wire                 s2_valid0_i,
     input wire                 s2_valid1_i,
     input wire                 s2_cached_i,
+    input wire                 s2_en_i,
     input wire                 s2_install_i,
 
 
@@ -31,6 +32,8 @@ module icache_s2(
     //to axi
     output wire                  s2_axi_req_o,
     output wire [`DataAddrBus]   s2_addr_o,
+    output wire                  s2_uc_req_o,
+    output wire [`DataBus]       s2_uc_addr_o,
     
     //to s1
     output wire                  icache_stall_o,
@@ -104,7 +107,7 @@ module icache_s2(
     end
     
     //Stall
-    assign icache_stall_o = (icache_status == `ICACHE_READ) | (s2_axi_req_o);
+    assign icache_stall_o = (icache_status == `ICACHE_READ) | (s2_axi_req_o) | s2_uc_req_o;
 
     //hit logic
     wire [20: 0] tag1;
@@ -118,6 +121,8 @@ module icache_s2(
     assign s2_axi_req_o = s2_cache_rreq_i & !(hit1 | hit2) & !s2_install_i; //only send request once
     assign s2_addr_o    = {s2_physical_addr_i[31 : 5], 5'b0};
 
+    assign s2_uc_req_o  = (!s2_cached_i) && s2_en_i && !s2_install_i;
+    assign s2_uc_addr_o = s2_physical_addr_i;
     //to s1
     assign s2_rreq_o    = s2_cache_rreq_i;
 

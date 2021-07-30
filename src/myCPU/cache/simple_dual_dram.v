@@ -28,7 +28,7 @@ assign data_out = !val ? 0 :TAG[addrb];
         begin
         valid <= 0;
         end
-        else begin 
+        else if (|wea) begin 
         valid[addra] <= 1;
         end
     end

@@ -36,10 +36,11 @@ module icache_s1(
     output wire                 s1_valid0_o,
     output wire                 s1_valid1_o,
     output wire                 s1_cached_o,
+    output wire                 s1_en_o,
     output wire                 s1_install_o,
 
     output wire [`DataBus]      s1_data_way0_o,
-    output wire [`DataBus]      s1_data_way1_o     
+    output wire [`DataBus]      s1_data_way1_o
 
     );
     
@@ -213,7 +214,9 @@ module icache_s1(
     wire                 s1_valid0_next;
     wire                 s1_valid1_next;
     wire                 s1_cached_next;
-    wire                 s1_install_next;   
+    wire                 s1_en_next;
+    wire                 s1_install_next;
+     
 
     assign  s1_virtual_addr_next   = s1_virtual_addr_i;
     assign  s1_physical_addr_next  = s1_physical_addr_i;
@@ -222,6 +225,7 @@ module icache_s1(
     assign  s1_valid1_next         = valid1;
     assign  s1_cached_next         = s1_cached_i;
     assign  s1_install_next        = stall;
+    assign  s1_en_next             = s1_rreq_i;
 
 
 
@@ -231,11 +235,13 @@ module icache_s1(
 
 DFFRE #(.WIDTH(32))     virtual_addr_next    (.d(s1_virtual_addr_next), .q(s1_virtual_addr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))     physical_addr_next   (.d(s1_physical_addr_next), .q(s1_physical_addr_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))     cache_rreq_next      (.d(s1_cache_rreq_next), .q(s1_cache_rreq_o), .en(en), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))      cache_rreq_next      (.d(s1_cache_rreq_next), .q(s1_cache_rreq_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))      valid1_next          (.d(s1_valid0_next), .q(s1_valid0_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))      valid2_next          (.d(s1_valid1_next), .q(s1_valid1_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))      cache_next           (.d(s1_cached_next), .q(s1_cached_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))      install_next         (.d(s1_install_next), .q(s1_install_o), .en(1), .clk(clk), .rst_n(rst_n));
+DFFRE #(.WIDTH(1))      en_next              (.d(s1_en_next), .q(s1_en_o), .en(en), .clk(clk), .rst_n(rst_n));
+
 
 
 endmodule

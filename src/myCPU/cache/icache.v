@@ -23,6 +23,8 @@ module icache(
     //to cache_axi
     output wire                 icache_rreq_o,
     output wire [`DataAddrBus]  icache_raddr_o,
+    output wire                 icache_uncache_req,
+    output wire [`DataAddrBus]  icache_uc_addr,
     
     //to cpu
     output wire                 cpu_stall_o,
@@ -38,6 +40,7 @@ module icache(
     wire                 s1_valid0_o;
     wire                 s1_valid1_o;
     wire                 s1_cached_o;
+    wire                 s1_en_o;
     wire                 s1_install_o;
     wire [`DataBus]      s1_data_way0_o;
     wire [`DataBus]      s1_data_way1_o;
@@ -78,10 +81,11 @@ icache_s1 ICACHE_S1
     .s1_valid0_o(s1_valid0_o),
     .s1_valid1_o(s1_valid1_o),
     .s1_cached_o(s1_cached_o),
+    .s1_en_o(s1_en_o),
     .s1_install_o(s1_install_o),
 
     .s1_data_way0_o(s1_data_way0_o),
-    .s1_data_way1_o(s1_data_way1_o)     
+    .s1_data_way1_o(s1_data_way1_o) 
 );
 
 icache_s2 ICACHE_S2
@@ -97,6 +101,7 @@ icache_s2 ICACHE_S2
     .s2_valid0_i(s1_valid0_o),
     .s2_valid1_i(s1_valid1_o),
     .s2_cached_i(s1_cached_o),
+    .s2_en_i(s1_en_o),
     .s2_install_i(s1_install_o),
 
     .s2_data_way0_i(s1_data_way0_o),
@@ -109,6 +114,8 @@ icache_s2 ICACHE_S2
     
     .s2_axi_req_o(icache_rreq_o),
     .s2_addr_o(icache_raddr_o),
+    .s2_uc_req_o(icache_uncache_req),
+    .s2_uc_addr_o(icache_uc_addr),
     
     .icache_stall_o(cpu_stall_o),
     .s2_hit1_o(s1_hit1_i),

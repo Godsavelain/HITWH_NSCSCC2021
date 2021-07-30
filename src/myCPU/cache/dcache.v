@@ -22,6 +22,7 @@ module dcache(
     //from cache_axi
     input  wire                 rend,//give this signal and data at the same time
     input  wire                 wend,
+    input  wire                 write_ok,
     input  wire [`WayBus]       cacheline_rdata_i,
     input  wire [31: 0]         dc_uc_data_i,
 
@@ -99,6 +100,7 @@ dcache_s1 DCACHE_S1
  
     .s1_rend_i              (rend),
     .s1_wend_i              (wend),
+    .s1_write_ok            (write_ok),
     .s1_cacheline_rdata_i   (cacheline_rdata_i),
     
     .dcache_stall_i         (dcache_stall_o),
@@ -174,6 +176,7 @@ dcache_s2 DCACHE_S2
 
     .s2_rend_i              (rend),
     .s2_wend_i              (wend),
+    .s2_write_ok            (write_ok),
     .s2_cacheline_rdata_i   (cacheline_rdata_i),
     
     .s2_status_o            (s1_s2_status_i),

@@ -58,6 +58,7 @@ module dcache_axi
     //to dcache
     output wire                  dcache_axi_rend,
     output wire                  dcache_axi_wend,
+    output wire                  dcache_axi_write_ok,
     output wire [`WayBus]        dcache_axi_data_o,//give a cacheline at once
 
     input  wire [`DCACHE_STATS]  status_in, 
@@ -90,6 +91,44 @@ module dcache_axi
     assign bready   = 1'b1;
 
 //to hold req
+    wire burst_write;
+    reg burst_write_reg;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            burst_write_reg <= 0;                 
+        end
+        else begin
+            if(bvalid)
+            begin
+                burst_write_reg <= 0;
+            end
+            else if(write_addr_handshake)
+            begin
+                burst_write_reg <= 1;
+            end
+        end
+    end
+    assign burst_write = bvalid ? 0 : burst_write_reg;
+
+    wire burst_read;
+    reg burst_read_reg;
+    always @(posedge aclk, negedge aresetn) begin
+        if(!aresetn ) begin
+            burst_read_reg <= 0;                 
+        end
+        else begin
+            if(rlast && read_handshake)
+            begin
+                burst_read_reg <= 0;
+            end
+            else if(read_addr_handshake)
+            begin
+                burst_read_reg <= 1;
+            end
+        end
+    end
+    assign burst_read = (rlast && read_handshake) ? 0 : burst_read_reg;
+
     reg  ca_rreq_reg;
     always @(posedge aclk, negedge aresetn) begin
         if(!aresetn ) begin
@@ -234,11 +273,12 @@ module dcache_axi
     assign dcache_axi_rend = (rlast & read_handshake);
     //end of write
     assign dcache_axi_wend = bvalid ;
+    assign dcache_axi_write_ok = write_addr_handshake;
 
     assign awsize   = ca_wreq ? 3'b010 : { 1'b0, bus_store_size};
     assign arsize   = ca_rreq ? 3'b010 : { 1'b0, bus_load_size};
     assign wstrb    = bus_wen;
-    assign wvalid   = status_in[4] | status_in[5];
+    assign wvalid   = status_in[4] | status_in[5] | burst_write;
 
     // assign dcache_axi_stall = status_in[1] | (status_in[2] & !(rlast & read_handshake)) | read_req | write_req | 
     //                       status_in[4] | status_in[5] | (status_in[6] & !bvalid) 
@@ -249,12 +289,13 @@ module dcache_axi
     assign status_next = (status_in[0] | status_in == 0) && read_req    ? READ_REQUEST  :
                          status_in[1] && read_addr_handshake            ? READ_TRANSFER :
                          status_in[1] && !read_addr_handshake           ? READ_REQUEST :
-                         status_in[2] && !(rlast & read_handshake)      ? READ_TRANSFER :
-                         status_in[2] && (rlast & read_handshake)       ? READ_END      :
-                         (status_in[3] | status_in[7]) && !read_req && !write_req       ? IDLE :
+                         status_in[2] && (burst_read | burst_write)     ? READ_TRANSFER :
+                         status_in[2] && !(burst_read | burst_write)    ? READ_END      :
+                         (status_in[3] | status_in[7]) && !read_req && !write_req   ? IDLE :
                          (status_in[3] | status_in[7]) && read_req      ? READ_REQUEST  :
                          status_in[0] && write_req                      ? WRITE_REQUEST :
-                         status_in[4] && write_addr_handshake           ? WRITE_TRANSFER :
+                         status_in[4] && (write_addr_handshake && !ca_wreq) ? WRITE_TRANSFER :
+                         status_in[4] && (write_addr_handshake && ca_wreq) ? WRITE_END :
                          status_in[4] && !write_addr_handshake          ? WRITE_REQUEST :
                          status_in[5] && !(wlast & write_handshake)     ? WRITE_TRANSFER :
                          status_in[5] && (wlast & write_handshake)      ? WRITE_RESPONSE :
@@ -354,6 +395,6 @@ module dcache_axi
     assign dcache_axi_data_o[159:128] = burst_rdata[4];
     assign dcache_axi_data_o[191:160] = burst_rdata[5];
     assign dcache_axi_data_o[223:192] = burst_rdata[6];
-    assign dcache_axi_data_o[255:224] = rdata;
+    assign dcache_axi_data_o[255:224] = (rlast && read_handshake) ? rdata : burst_rdata[7] ;
 
     endmodule

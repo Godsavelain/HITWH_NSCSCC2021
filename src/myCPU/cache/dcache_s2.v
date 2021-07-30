@@ -31,6 +31,7 @@ module dcache_s2(
     //from axi
     input wire                 s2_rend_i,
     input wire                 s2_wend_i,
+    input wire                 s2_write_ok,
     input wire [`WayBus]       s2_cacheline_rdata_i,
 
     //from cpu
@@ -78,7 +79,7 @@ module dcache_s2(
                                 (dcache_status_i[0] | dcache_status_i == 0) && s2_ca_rreq_o ? `DCACHE_CA_READ :
                                 (dcache_status_i[0] | dcache_status_i == 0) && s2_ca_wreq_o ? `DCACHE_CA_WRITE :
                                 (dcache_status_i[1] &&  s2_rend_i) ? `DCACHE_IDLE :
-                                (dcache_status_i[2] &&  s2_wend_i) ? `DCACHE_CA_READ :
+                                (dcache_status_i[2] &&  s2_write_ok) ? `DCACHE_CA_READ :
                                 (dcache_status_i[3] &&  s2_rend_i) ? `DCACHE_IDLE :
                                 (dcache_status_i[4] &&  s2_wend_i) ? `DCACHE_IDLE :
                                 dcache_status_i;
@@ -134,7 +135,7 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     //send ca_rreq in next cycle of wend
     reg  write_back_end;
     always @(posedge clk) begin
-        if((dcache_status_i[2] &&  s2_wend_i))
+        if((dcache_status_i[2] &&  s2_write_ok))
             begin
                 write_back_end <= 1;
             end

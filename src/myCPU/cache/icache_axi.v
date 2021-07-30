@@ -41,15 +41,10 @@ module icache_axi
     input  wire          bvalid,
     output wire          bready,
 
-    input  wire          bus_en,
-    input  wire [ 3: 0]  bus_wen,
-    input  wire [31: 0]  bus_addr,
-
     output wire [31: 0]  bus_rdata,
     input  wire [31: 0]  bus_wdata,
     //output wire          bus_streq,
     input  wire          bus_stall,//if stage is stalled
-    //input  wire          bus_cached,
 
     input  wire [ 3: 0]  status_in, 
     input  wire [31: 0]  req_addr_in, //to hold the uncache req addr 
@@ -58,10 +53,12 @@ module icache_axi
     output wire          icache_axi_stall,
 
     //for uncache
-    input  wire                 bus_cached, 
+    input  wire [31: 0]         uc_addr, 
+    input  wire                 icache_uc_req_i,
     //from cache
     input wire                  icache_axi_req_i,
     input wire [`DataAddrBus]   icache_axi_addr_i,
+    
     //from dcache_axi
     input wire                  dcache_active,//dcache is working
 
@@ -156,20 +153,20 @@ module icache_axi
     assign ca_req_addr    = icache_axi_req_i ? icache_axi_addr_i : ca_req_addr_reg;
 
     assign cache_fill_req = ca_req & (status_in[0] | status_in[3] | status_in == 0)  ;
-    assign uncache_req    = (((status_in[0] | status_in[3] | status_in == 0) & bus_en) & !bus_cached);
+    assign uncache_req    = ((status_in[0] | status_in[3] | status_in == 0) & icache_uc_req_i);
 
     wire stall;
     assign stall = bus_stall | dcache_active ;
     assign read_req =  (uncache_req | cache_fill_req) & !stall ;
-    //assign read_req = (status_in[0] | status_in == 0) & bus_en & (| bus_wen);
+    
     assign araddr   = cache_fill_req ?  ca_req_addr :
-                      (uncache_req & (!stall)) ? bus_addr : req_addr_in;
+                      (uncache_req & (!stall)) ? uc_addr : req_addr_in;
     assign arlen    = ca_req ? 4'h7 : 4'b0;
     assign arvalid  = read_req  | status_in[1];
     assign read_addr_handshake = arvalid & arready;
     assign read_handshake      = rvalid & rready;
 
-    assign awaddr = bus_addr;
+    assign awaddr = uc_addr;
 
     assign status_next = (status_in[0] | status_in == 0) && read_req  ? READ_REQUEST  :
                          status_in[1] && !read_addr_handshake         ? READ_REQUEST  :
@@ -180,14 +177,12 @@ module icache_axi
                          status_in[3] && !read_req                    ? IDLE          :
                          4'b0001;
     assign req_addr_next = cache_fill_req & !bus_stall ?  ca_req_addr :
-                           (uncache_req & (!stall)) & !bus_stall ? bus_addr : req_addr_in;
+                           (uncache_req & (!stall)) & !bus_stall ? uc_addr : req_addr_in;
 
     DFFRE #(.WIDTH(4))      stat_next           (.d(status_next), .q(status_out), .en(1), .clk(aclk), .rst_n(aresetn));
     DFFRE #(.WIDTH(32))     req_next            (.d(req_addr_next), .q(req_addr_out), .en(1), .clk(aclk), .rst_n(aresetn));
    
 
-   //assign icache_axi_stall = read_req | status_in[1] | (status_in[2] && !(rlast & read_handshake));
-   //assign icache_axi_stall = (read_req & !status_in[3]) | status_in[1] | status_in[2] ;
    assign icache_axi_stall = status_in[1] | status_in[2] ;
    
    //burst count

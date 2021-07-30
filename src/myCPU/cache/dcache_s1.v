@@ -25,6 +25,7 @@ module dcache_s1(
     //from axi
     input  wire                 s1_rend_i,//give this signal and data at the same time
     input  wire                 s1_wend_i,
+    input  wire                 s1_write_ok,
     input  wire [`WayBus]       s1_cacheline_rdata_i,
 
     //from S2   

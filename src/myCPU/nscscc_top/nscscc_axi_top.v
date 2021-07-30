@@ -157,6 +157,8 @@ module mycpu_top
     wire [31: 0]          icache_virtual_addr_i;
     wire                  icache_axi_req_i;
     wire [31: 0]          icache_axi_addr_i;
+    wire [31: 0]          icache_uc_addr;
+    wire                  icache_uncache_req;
     wire                  icache_axi_rend;
     wire [`WayBus]        icache_axi_data_o;
     wire [31: 0]          icache_rdata_o;
@@ -173,6 +175,8 @@ module mycpu_top
     wire [31: 0]          dcache_phy_addr_i;
     wire [31: 0]          dcache_vir_addr_i;
     wire                  dcache_axi_rend;
+    wire                  dcache_axi_wend;
+    wire                  dcache_axi_write_ok;
     wire [`WayBus]        dcache_axi_data_o;
     wire [31: 0]          dcache_rdata_o;
     wire                  dcache_data_valid;
@@ -280,9 +284,6 @@ icache_axi ICACHE_AXI
     .bvalid                 (icache_bvalid),
     .bready                 (icache_bready),
     
-    .bus_en                 (icache_bus_en),
-    .bus_wen                (icache_bus_wen),
-    .bus_addr               (icache_bus_addr),
     .bus_rdata              (icache_bus_rdata),
     .bus_wdata              (icache_bus_wdata),
     .bus_stall              (ibus_stall),
@@ -293,9 +294,12 @@ icache_axi ICACHE_AXI
     .req_addr_out           (ic_req_addr_in),
     .icache_axi_stall       (icache_axi_stall),
 
-    .bus_cached             (ibus_cached),
+    .uc_addr                (icache_uc_addr),
+    .icache_uc_req_i        (icache_uncache_req), 
+
     .icache_axi_req_i       (icache_axi_req_i),
-    .icache_axi_addr_i      (icache_axi_addr_i),   
+    .icache_axi_addr_i      (icache_axi_addr_i),
+      
     .dcache_active          (dcache_stall),
     .icache_axi_rend        (icache_axi_rend),
     .icache_axi_data_o      (icache_axi_data_o)
@@ -319,6 +323,8 @@ icache ICACHE
     
     .icache_rreq_o          (icache_axi_req_i),
     .icache_raddr_o         (icache_axi_addr_i),
+    .icache_uncache_req     (icache_uncache_req),
+    .icache_uc_addr         (icache_uc_addr),
     
     .cpu_stall_o            (icache_stall),
     .icache_rdata_o         (icache_rdata_o),
@@ -381,6 +387,7 @@ dcache_axi DCACHE_AXI
 
     .dcache_axi_rend         (dcache_axi_rend),
     .dcache_axi_wend         (dcache_axi_wend),
+    .dcache_axi_write_ok     (dcache_axi_write_ok),
     .dcache_axi_data_o       (dcache_axi_data_o),
 
     .status_in               (dcache_status_out), 
@@ -410,6 +417,7 @@ dcache DCACHE
     
      .rend                      (dcache_axi_rend),
      .wend                      (dcache_axi_wend),
+     .write_ok                  (dcache_axi_write_ok),
      .cacheline_rdata_i         (dcache_axi_data_o),
      .dc_uc_data_i              (dc_uc_data_i),
     
