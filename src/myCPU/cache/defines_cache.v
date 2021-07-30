@@ -37,6 +37,7 @@
 
 //Num
 `define BlockNum 8
+`define DBlockNum 16
 `define SetNum 64
 `define WaySize 256//32*8,the size of one way
 `define ZeroWay `WaySize'h0
@@ -53,10 +54,14 @@
 
 `define OffsetBus 4:0
 `define IndexBus 10:5
+`define DIndexBus 11:6
 `define TagBus 31:11
+`define DTagBus 31:12
 `define TagVBus 20:0
+`define DTagVBus 19:0
 
 `define WayBus 255:0
+`define DWayBus 511:0
 `define SetBus 63:0
 `define DirtyBus 2*`SetNum-1:0
 

@@ -53,13 +53,13 @@ module dcache_axi
     input wire                   ca_wreq_i,
     input wire                   uc_rreq_i,
     input wire                   uc_wreq_i,
-    input wire [`WayBus]         cacheline_wdata_i,
+    input wire [`DWayBus]        cacheline_wdata_i,
 
     //to dcache
     output wire                  dcache_axi_rend,
     output wire                  dcache_axi_wend,
     output wire                  dcache_axi_write_ok,
-    output wire [`WayBus]        dcache_axi_data_o,//give a cacheline at once
+    output wire [`DWayBus]       dcache_axi_data_o,//give a cacheline at once
 
     input  wire [`DCACHE_STATS]  status_in, 
     input  wire [31: 0]          req_addr_in, //to hold the uncache req addr 
@@ -148,7 +148,7 @@ module dcache_axi
 
     wire   ca_rreq;
     assign ca_rreq   = ca_rreq_i ? 1 : ca_rreq_reg;
-    assign arlen     = ca_rreq ? 4'h7 : 4'h0;
+    assign arlen     = ca_rreq ? 4'hF : 4'h0;
 
     reg  ca_wreq_reg;
     always @(posedge aclk, negedge aresetn) begin
@@ -169,7 +169,7 @@ module dcache_axi
 
     wire   ca_wreq;
     assign ca_wreq   = ca_wreq_i ? 1 : ca_wreq_reg;
-    assign awlen     = ca_wreq ? 4'h7 : 4'b0;
+    assign awlen     = ca_wreq ? 4'hF : 4'b0;
 
     reg  uc_wreq_reg;
     always @(posedge aclk, negedge aresetn) begin
@@ -318,7 +318,7 @@ module dcache_axi
     end
     
     //write burst count
-   reg [2:0] write_counter;
+   reg [3:0] write_counter;
    always @(posedge aclk, negedge aresetn) begin
         if(!aresetn ) begin
             write_counter <= 0;                 
@@ -336,25 +336,33 @@ module dcache_axi
     end
 
     //burst write
-    reg [`DataBus]burst_wdata[`BlockNum-1:0];
+    reg [`DataBus]burst_wdata[`DBlockNum-1:0];
     always @(posedge aclk) begin
     if(ca_wreq_i)
         begin
-        burst_wdata[0] <= cacheline_wdata_i[31: 0];
-        burst_wdata[1] <= cacheline_wdata_i[63:32];
-        burst_wdata[2] <= cacheline_wdata_i[95:64];
-        burst_wdata[3] <= cacheline_wdata_i[127:96];
-        burst_wdata[4] <= cacheline_wdata_i[159:128];
-        burst_wdata[5] <= cacheline_wdata_i[191:160];
-        burst_wdata[6] <= cacheline_wdata_i[223:192];
-        burst_wdata[7] <= cacheline_wdata_i[255:224];
+        burst_wdata[ 0] <= cacheline_wdata_i[ 31:  0];
+        burst_wdata[ 1] <= cacheline_wdata_i[ 63: 32];
+        burst_wdata[ 2] <= cacheline_wdata_i[ 95: 64];
+        burst_wdata[ 3] <= cacheline_wdata_i[127: 96];
+        burst_wdata[ 4] <= cacheline_wdata_i[159:128];
+        burst_wdata[ 5] <= cacheline_wdata_i[191:160];
+        burst_wdata[ 6] <= cacheline_wdata_i[223:192];
+        burst_wdata[ 7] <= cacheline_wdata_i[255:224];
+        burst_wdata[ 8] <= cacheline_wdata_i[287:256];
+        burst_wdata[ 9] <= cacheline_wdata_i[319:288];
+        burst_wdata[10] <= cacheline_wdata_i[351:320];
+        burst_wdata[11] <= cacheline_wdata_i[383:352];
+        burst_wdata[12] <= cacheline_wdata_i[415:384];
+        burst_wdata[13] <= cacheline_wdata_i[447:416];
+        burst_wdata[14] <= cacheline_wdata_i[479:448];
+        burst_wdata[15] <= cacheline_wdata_i[511:480];
         end
     end
     assign wdata = ca_wreq_reg ? burst_wdata[write_counter] : bus_wdata;
-    assign wlast = uc_wreq ? 1 : (write_counter==7);
+    assign wlast = uc_wreq ? 1 : (write_counter==4'b1111);
 
     //read burst count
-    reg [2:0] read_counter;
+    reg [3:0] read_counter;
     always @(posedge aclk, negedge aresetn) begin
         if(!aresetn ) begin
             read_counter <= 0;                 
@@ -371,30 +379,46 @@ module dcache_axi
         end
     end
     //burst read data
-    reg [`DataBus]burst_rdata[`BlockNum-1:0];
+    reg [`DataBus]burst_rdata[`DBlockNum-1:0];
     always @(posedge aclk, negedge aresetn) begin
         if(!aresetn ) begin
-            burst_rdata[0] <= 0;
-            burst_rdata[1] <= 0; 
-            burst_rdata[2] <= 0; 
-            burst_rdata[3] <= 0; 
-            burst_rdata[4] <= 0;            
-            burst_rdata[5] <= 0; 
-            burst_rdata[6] <= 0; 
-            burst_rdata[7] <= 0; 
+            burst_rdata[0 ] <= 0;
+            burst_rdata[1 ] <= 0; 
+            burst_rdata[2 ] <= 0; 
+            burst_rdata[3 ] <= 0; 
+            burst_rdata[4 ] <= 0;            
+            burst_rdata[5 ] <= 0; 
+            burst_rdata[6 ] <= 0; 
+            burst_rdata[7 ] <= 0;
+            burst_rdata[8 ] <= 0; 
+            burst_rdata[9 ] <= 0; 
+            burst_rdata[10] <= 0; 
+            burst_rdata[11] <= 0; 
+            burst_rdata[12] <= 0; 
+            burst_rdata[13] <= 0; 
+            burst_rdata[14] <= 0; 
+            burst_rdata[15] <= 0;  
         end
         else begin
         burst_rdata[read_counter] <= rdata;
         end
     end
-
-    assign dcache_axi_data_o[31: 0]   = burst_rdata[0];
-    assign dcache_axi_data_o[63:32]   = burst_rdata[1];
-    assign dcache_axi_data_o[95:64]   = burst_rdata[2];
-    assign dcache_axi_data_o[127:96]  = burst_rdata[3];
-    assign dcache_axi_data_o[159:128] = burst_rdata[4];
-    assign dcache_axi_data_o[191:160] = burst_rdata[5];
-    assign dcache_axi_data_o[223:192] = burst_rdata[6];
-    assign dcache_axi_data_o[255:224] = (rlast && read_handshake) ? rdata : burst_rdata[7] ;
+ 
+    assign dcache_axi_data_o[31 :  0] = burst_rdata[0 ];
+    assign dcache_axi_data_o[63 : 32] = burst_rdata[1 ];
+    assign dcache_axi_data_o[95 : 64] = burst_rdata[2 ];
+    assign dcache_axi_data_o[127: 96] = burst_rdata[3 ];
+    assign dcache_axi_data_o[159:128] = burst_rdata[4 ];
+    assign dcache_axi_data_o[191:160] = burst_rdata[5 ];
+    assign dcache_axi_data_o[223:192] = burst_rdata[6 ];
+    assign dcache_axi_data_o[255:224] = burst_rdata[7 ];
+    assign dcache_axi_data_o[287:256] = burst_rdata[8 ];
+    assign dcache_axi_data_o[319:288] = burst_rdata[9 ];
+    assign dcache_axi_data_o[351:320] = burst_rdata[10];
+    assign dcache_axi_data_o[383:352] = burst_rdata[11];
+    assign dcache_axi_data_o[415:384] = burst_rdata[12];
+    assign dcache_axi_data_o[447:416] = burst_rdata[13];
+    assign dcache_axi_data_o[479:448] = burst_rdata[14];
+    assign dcache_axi_data_o[511:480] = (rlast && read_handshake) ? rdata : burst_rdata[15] ;
 
     endmodule

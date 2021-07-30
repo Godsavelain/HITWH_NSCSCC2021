@@ -23,7 +23,7 @@ module dcache(
     input  wire                 rend,//give this signal and data at the same time
     input  wire                 wend,
     input  wire                 write_ok,
-    input  wire [`WayBus]       cacheline_rdata_i,
+    input  wire [`DWayBus]       cacheline_rdata_i,
     input  wire [31: 0]         dc_uc_data_i,
 
     //to axi
@@ -38,7 +38,7 @@ module dcache(
     output  wire                cache_rreq,
     output  wire                cache_wreq,
 
-    output  wire [`WayBus]      cacheline_wdata_o,
+    output  wire [`DWayBus]      cacheline_wdata_o,
 
     //to cpu
     output wire                 dcache_stall_o,
@@ -58,8 +58,8 @@ module dcache(
     wire                 s1_valid1_o;
     wire                 s1_dirty0_o;
     wire                 s1_dirty1_o;
-    wire [`BlockNum-1:0] s1_colli0_o;
-    wire [`BlockNum-1:0] s1_colli1_o;
+    wire [`DBlockNum-1:0] s1_colli0_o;
+    wire [`DBlockNum-1:0] s1_colli1_o;
     wire                 s1_lru_o;
     wire                 s1_cached_o;
     wire                 s1_install_o;
@@ -71,7 +71,7 @@ module dcache(
     wire                 s1_s2rreq_i;
     wire                 s1_write_miss_i;
     wire [ 3: 0]         s1_bus_wen_o;
-    wire [`WayBus]       s1_data_o;
+    wire [`DWayBus]       s1_data_o;
     wire [ 5: 0]         s1_virtual_index_o;
 
     wire [31: 0]        cache_data;

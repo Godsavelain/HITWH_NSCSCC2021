@@ -10,14 +10,14 @@ module dcache_s2(
     input wire                 s2_cache_wreq_i,
     input wire                 s2_uc_rreq_i,
     input wire                 s2_uc_wreq_i,
-    input wire [`TagVBus]      s2_tagv_cache_w0_i,
-    input wire [`TagVBus]      s2_tagv_cache_w1_i,
+    input wire [`DTagVBus]     s2_tagv_cache_w0_i,
+    input wire [`DTagVBus]     s2_tagv_cache_w1_i,
     input wire                 s2_valid0_i,
     input wire                 s2_valid1_i,
     input wire                 s2_dirty0_i,
     input wire                 s2_dirty1_i,
-    input wire [`BlockNum-1:0] s2_colli0_i,
-    input wire [`BlockNum-1:0] s2_colli1_i,
+    input wire [`DBlockNum-1:0] s2_colli0_i,
+    input wire [`DBlockNum-1:0] s2_colli1_i,
     input wire                 s2_lru_i,
 
     input wire                 s2_cached_i,
@@ -32,7 +32,7 @@ module dcache_s2(
     input wire                 s2_rend_i,
     input wire                 s2_wend_i,
     input wire                 s2_write_ok,
-    input wire [`WayBus]       s2_cacheline_rdata_i,
+    input wire [`DWayBus]      s2_cacheline_rdata_i,
 
     //from cpu
     input wire                 s2_cpuvalid_i,
@@ -115,10 +115,10 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
                             | s2_uc_rreq_o | s2_uc_wreq_o | ((s2_cache_rreq_i | s2_cache_wreq_i) & !(hit1 | hit2) & !s2_install_i)  ;
 
     //hit logic
-    wire [`TagVBus]  tag0;
-    wire [`TagVBus]  tag1;
-    wire hit1      = (s2_tagv_cache_w0_i[`TagVBus]==s2_physical_addr_i[`TagBus] && s2_valid0_i==`Valid)? `HitSuccess : `HitFail;
-    wire hit2      = (s2_tagv_cache_w1_i[`TagVBus]==s2_physical_addr_i[`TagBus] && s2_valid1_i==`Valid)? `HitSuccess : `HitFail;
+    wire [`DTagVBus]  tag0;
+    wire [`DTagVBus]  tag1;
+    wire hit1      = (s2_tagv_cache_w0_i[`DTagVBus]==s2_physical_addr_i[`DTagBus] && s2_valid0_i==`Valid)? `HitSuccess : `HitFail;
+    wire hit2      = (s2_tagv_cache_w1_i[`DTagVBus]==s2_physical_addr_i[`DTagBus] && s2_valid1_i==`Valid)? `HitSuccess : `HitFail;
     assign s2_hit0_o = hit1 && !s2_install_i;
     assign s2_hit1_o = hit2 && !s2_install_i;  
     //axi 
@@ -126,8 +126,8 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     wire [31: 0] write_addr;
     wire [31: 0] bank0_waddr;
     wire [31: 0] bank1_waddr;
-    assign bank0_waddr  =  {{s2_tagv_cache_w0_i[20:0]} , {s2_physical_addr_i[`IndexBus]} ,5'b0};
-    assign bank1_waddr  =  {{s2_tagv_cache_w1_i[20:0]} , {s2_physical_addr_i[`IndexBus]} ,5'b0};
+    assign bank0_waddr  =  {{s2_tagv_cache_w0_i[`DTagVBus]} , {s2_physical_addr_i[`DIndexBus]} ,6'b0};
+    assign bank1_waddr  =  {{s2_tagv_cache_w1_i[`DTagVBus]} , {s2_physical_addr_i[`DIndexBus]} ,6'b0};
     assign write_addr   =  s2_lru_i ? bank1_waddr : bank0_waddr;
     wire dirty_replace;//a dirty cacheline be replaced
     assign dirty_replace = s2_lru_i ? s2_dirty1_i : s2_dirty0_i;
@@ -150,7 +150,7 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     //assign s2_ca_wreq_o = (s2_cache_wreq_i & !(hit1 | hit2) & !s2_install_i) | ((s2_cache_rreq_i & !(hit1 | hit2) & !s2_install_i) && ) ;
     assign s2_ca_wreq_o = (s2_cache_rreq_i | s2_cache_wreq_i) & !(hit1 | hit2) && !s2_install_i && dirty_replace ;
     
-    assign s2_addr_o    =  s2_ca_rreq_o ? {s2_physical_addr_i[31 : 5], 5'b0} :
+    assign s2_addr_o    =  s2_ca_rreq_o ? {s2_physical_addr_i[31 : 6], 6'b0} :
                            s2_ca_wreq_o ? write_addr : s2_physical_addr_i ;
     
     assign s2_uc_rreq_o  = s2_uc_rreq_i & !s2_install_i;
@@ -162,8 +162,8 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     assign s2_write_miss_o = !(hit1 | hit2) && !s2_install_i && s2_cache_wreq_i;
 
     //get correct data
-    wire[ 2: 0] bank;
-    assign bank = s2_physical_addr_i[4:2];
+    wire[ 3: 0] bank;
+    assign bank = s2_physical_addr_i[5:2];
 
     wire [31:0] data0;
     wire [31:0] data1;
@@ -181,8 +181,8 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
                           read_data;
  
 
-    wire [ 2: 0] choose;
-    assign choose = s2_physical_addr_i[4:2];
+    wire [ 3: 0] choose;
+    assign choose = s2_physical_addr_i[5:2];
 
     wire [31: 0] data_in0;
     wire [31: 0] data_in1;
@@ -192,26 +192,50 @@ DFFRE #(.WIDTH(`DCACHE_STATUS_W))   stat_next   (.d(dcache_status_next), .q(dcac
     wire [31: 0] data_in5;
     wire [31: 0] data_in6;
     wire [31: 0] data_in7;
+    wire [31: 0] data_in8;
+    wire [31: 0] data_in9;
+    wire [31: 0] data_ina;
+    wire [31: 0] data_inb;
+    wire [31: 0] data_inc;
+    wire [31: 0] data_ind;
+    wire [31: 0] data_ine;
+    wire [31: 0] data_inf;
 
     wire [31: 0] data_in;
 
-    assign  data_in0    = s2_cacheline_rdata_i[31 : 0];
-    assign  data_in1    = s2_cacheline_rdata_i[63 :32];
-    assign  data_in2    = s2_cacheline_rdata_i[95 :64];
-    assign  data_in3    = s2_cacheline_rdata_i[127:96];
+    assign  data_in0    = s2_cacheline_rdata_i[ 31:  0];
+    assign  data_in1    = s2_cacheline_rdata_i[ 63: 32];
+    assign  data_in2    = s2_cacheline_rdata_i[ 95: 64];
+    assign  data_in3    = s2_cacheline_rdata_i[127: 96];
     assign  data_in4    = s2_cacheline_rdata_i[159:128];
     assign  data_in5    = s2_cacheline_rdata_i[191:160];
     assign  data_in6    = s2_cacheline_rdata_i[223:192];
     assign  data_in7    = s2_cacheline_rdata_i[255:224];
+    assign  data_in8    = s2_cacheline_rdata_i[287:256];
+    assign  data_in9    = s2_cacheline_rdata_i[319:288];
+    assign  data_ina    = s2_cacheline_rdata_i[351:320];
+    assign  data_inb    = s2_cacheline_rdata_i[383:352];
+    assign  data_inc    = s2_cacheline_rdata_i[415:384];
+    assign  data_ind    = s2_cacheline_rdata_i[447:416];
+    assign  data_ine    = s2_cacheline_rdata_i[479:448];
+    assign  data_inf    = s2_cacheline_rdata_i[511:480];
 
-    assign data_in = (choose==3'b000) ? data_in0 :
-                     (choose==3'b001) ? data_in1 :
-                     (choose==3'b010) ? data_in2 :
-                     (choose==3'b011) ? data_in3 :
-                     (choose==3'b100) ? data_in4 :
-                     (choose==3'b101) ? data_in5 :
-                     (choose==3'b110) ? data_in6 :
-                     data_in7;
+    assign data_in = (choose==4'b0000) ? data_in0 :
+                     (choose==4'b0001) ? data_in1 :
+                     (choose==4'b0010) ? data_in2 :
+                     (choose==4'b0011) ? data_in3 :
+                     (choose==4'b0100) ? data_in4 :
+                     (choose==4'b0101) ? data_in5 :
+                     (choose==4'b0110) ? data_in6 :
+                     (choose==4'b0111) ? data_in7 :
+                     (choose==4'b1000) ? data_in8 :
+                     (choose==4'b1001) ? data_in9 :
+                     (choose==4'b1010) ? data_ina :
+                     (choose==4'b1011) ? data_inb :
+                     (choose==4'b1100) ? data_inc :
+                     (choose==4'b1101) ? data_ind :
+                     (choose==4'b1110) ? data_ine :
+                     data_inf;
 
 
     always @(posedge clk, negedge rst_n) begin

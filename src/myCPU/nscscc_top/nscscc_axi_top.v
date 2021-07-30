@@ -177,7 +177,7 @@ module mycpu_top
     wire                  dcache_axi_rend;
     wire                  dcache_axi_wend;
     wire                  dcache_axi_write_ok;
-    wire [`WayBus]        dcache_axi_data_o;
+    wire [`DWayBus]       dcache_axi_data_o;
     wire [31: 0]          dcache_rdata_o;
     wire                  dcache_data_valid;
     wire                  cpu_mem_valid_o;
@@ -194,7 +194,7 @@ module mycpu_top
     wire                  cache_rreq;
     wire                  cache_wreq;
     wire                  dcache_stall;
-    wire [`WayBus]        cacheline_wdata_o;
+    wire [`DWayBus]       cacheline_wdata_o;
 
 mycpu_core_top MY_TOP
 (
