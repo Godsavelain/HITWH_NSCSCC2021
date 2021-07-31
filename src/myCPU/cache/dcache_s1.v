@@ -377,28 +377,19 @@ module dcache_s1(
     assign s1_lru_o = LRU_pick;
 
         //Valid
-    reg  [63: 0] ca_valid0 ; 
-    reg  [63: 0] ca_valid1 ;
-    assign valid0 = ca_valid0[virtual_index];
-    assign valid1 = ca_valid1[virtual_index];
-        always@(posedge clk)begin
-        if(!rst_n)
-        begin
-            ca_valid0 <= 0;
-            ca_valid1 <= 0;
-        end
-        else if(s1_rend_i == 1)
-        begin
-            if(LRU_pick == 1)
-                begin
-                    ca_valid1[old_virtual_addr_i[`DIndexBus]] <= 1;
-                end
-            else begin
-                    ca_valid0[old_virtual_addr_i[`DIndexBus]] <= 1;
-            end
-        end
-            
-    end 
+    wire wea_val0;
+    wire wea_val1;
+    wire wdata_val0;
+    wire wdata_val1;
+    assign wea_val0 = !rst_n ? 1 : (s1_rend_i && !LRU_pick);
+    assign wea_val1 = !rst_n ? 1 : (s1_rend_i &&  LRU_pick);
+    assign wdata_val0 = !rst_n ? 0 : 1;
+    assign wdata_val1 = !rst_n ? 0 : 1;
+
+    valid_ram ca_valid0 (.clka(clk),.ena(wea_val0),.wea(wea_val0),.addra(old_virtual_addr_i[`DIndexBus]), 
+        .dina(wdata_val0),.clkb(clk),.addrb(virtual_index),.doutb(s1_valid0_o));    
+    valid_ram ca_valid1 (.clka(clk),.ena(wea_val1),.wea(wea_val1),.addra(old_virtual_addr_i[`DIndexBus]), 
+        .dina(wdata_val1),.clkb(clk),.addrb(virtual_index),.doutb(s1_valid1_o));
 
     //dirty
     reg  [63: 0] ca_dirty0 ; 
@@ -508,8 +499,6 @@ module dcache_s1(
     wire [`DataAddrBus]  s1_virtual_addr_next;
     wire [`DataAddrBus]  s1_physical_addr_next;
     wire                 s1_cache_rreq_next;   
-    wire                 s1_valid0_next;
-    wire                 s1_valid1_next;
     wire                 s1_dirty0_next;
     wire                 s1_dirty1_next;
     wire [`DBlockNum-1:0] s1_colli0_next;
@@ -529,8 +518,6 @@ module dcache_s1(
     assign  s1_virtual_addr_next   = s1_virtual_addr_i;
     assign  s1_physical_addr_next  = s1_physical_addr_i;
 
-    assign  s1_valid0_next         = valid0;
-    assign  s1_valid1_next         = valid1;
     assign  s1_dirty0_next         = dirty0;
     assign  s1_dirty1_next         = dirty1;
     assign  s1_colli0_next         = {way0_colli_f , way0_colli_e , way0_colli_d , way0_colli_c ,
@@ -563,8 +550,6 @@ module dcache_s1(
 
 DFFRE #(.WIDTH(32))     virtual_addr_next    (.d(s1_virtual_addr_next), .q(s1_virtual_addr_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(32))     physical_addr_next   (.d(s1_physical_addr_next), .q(s1_physical_addr_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))      valid1_next          (.d(s1_valid0_next), .q(s1_valid0_o), .en(en), .clk(clk), .rst_n(rst_n));
-DFFRE #(.WIDTH(1))      valid2_next          (.d(s1_valid1_next), .q(s1_valid1_o), .en(en), .clk(clk), .rst_n(rst_n));
 
 DFFRE #(.WIDTH(1))      dirty0_next          (.d(s1_dirty0_next), .q(s1_dirty0_o), .en(en), .clk(clk), .rst_n(rst_n));
 DFFRE #(.WIDTH(1))      dirty1_next          (.d(s1_dirty1_next), .q(s1_dirty1_o), .en(en), .clk(clk), .rst_n(rst_n));
