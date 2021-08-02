@@ -95,7 +95,7 @@ module icache_s2(
             icache_status <= `ICACHE_IDLE;                 
         end
         else begin
-            if((icache_status==`ICACHE_IDLE) && s2_axi_req_o )
+            if((icache_status==`ICACHE_IDLE) && (s2_axi_req_o | s2_uc_req_o)  )
             begin
                 icache_status <= `ICACHE_READ;
             end

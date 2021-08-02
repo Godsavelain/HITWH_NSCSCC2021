@@ -6,7 +6,6 @@ module mycpu_core_top
   input wire                resetn,
   input wire  [ 5: 0]       ext_int,
 
-  input wire                 icache_axi_stall,
   input wire                 dcache_stall,
   input wire                 icache_stall,
   output wire                ibus_stall,
@@ -247,7 +246,6 @@ pc PC
   .pc_flush_i         (exc_flag           ),
   .if_flush_i         (flush_id_o         ),     
   .if_stall_i         (stall_pc_o         ),  
-  .icache_axi_stall   (icache_axi_stall   ),
   .icache_stall       (icache_stall       ),
   .branch_en          (if_branch_en       ),
   .if_id_valid_i      (if_id_valid_i),
@@ -675,7 +673,6 @@ writeback WRITEBACK
 
 control control
 (
-  .streq_pc_i         (icache_axi_stall),
   .streq_id_i         (streq_id_i),
   .streq_ex_i         (streq_ex_i),
   .streq_mem_i        (streq_mem_i),

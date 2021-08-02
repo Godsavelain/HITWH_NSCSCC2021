@@ -7,7 +7,6 @@ module pc
 	input wire 				if_flush_i,			//from controller
 	input wire 				pc_flush_i,
 	input wire				if_stall_i,			//from controller
-	input wire 				icache_axi_stall,//icache åœ¨ç­‰å¾…æ•°æ?
 	input wire 				icache_stall,
 	//input wire				usrmode,
 	input wire				branch_en,
@@ -64,7 +63,8 @@ reg 		in_delay_slot;
 wire [31: 0]		inst_i;
 
 wire icache_streq;
-assign icache_streq = icache_axi_stall | icache_stall;
+//assign icache_streq = icache_axi_stall | icache_stall;
+assign icache_streq = icache_stall;
 
 assign inst_i = cache_valid_i ? cache_inst_i : uc_inst_i ;
 

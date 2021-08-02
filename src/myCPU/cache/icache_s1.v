@@ -15,6 +15,7 @@ module icache_s1(
     //from last cycle
     input wire [`DataAddrBus]   old_virtual_addr_i,
     input wire [`DataAddrBus]   old_physical_addr_i,
+    input wire                  old_cached,
 
     //from axi
     input  wire                 s1_rend_i,//give this signal and data at the same time
@@ -167,8 +168,8 @@ module icache_s1(
    
 
    //write to ram
-    assign wea_way0 = ((s1_s2_status_i == `ICACHE_READ) && s1_rend_i == 1 && LRU_pick == 1'b0)? 4'b1111 : 4'h0;   
-    assign wea_way1 = ((s1_s2_status_i == `ICACHE_READ) && s1_rend_i == 1 && LRU_pick == 1'b1)? 4'b1111 : 4'h0;
+    assign wea_way0 = (old_cached && s1_rend_i == 1 && LRU_pick == 1'b0)? 4'b1111 : 4'h0;   
+    assign wea_way1 = (old_cached && s1_rend_i == 1 && LRU_pick == 1'b1)? 4'b1111 : 4'h0;
                      
                  
     //ram write data

@@ -95,7 +95,6 @@ module mycpu_top
     wire          icache_bus_cached;
  
     wire [ 3: 0]  icache_status_out;
-    wire          icache_axi_stall;
     wire          icache_stall;
     
 
@@ -202,7 +201,6 @@ mycpu_core_top MY_TOP
   .resetn           (aresetn),
   .ext_int          (ext_int),
 
-  .icache_axi_stall     (icache_axi_stall),
   .icache_stall         (icache_stall),
   .dcache_stall         (dcache_stall),
   .ibus_stall       (ibus_stall),
@@ -292,7 +290,6 @@ icache_axi ICACHE_AXI
     .req_addr_in            (ic_req_addr_in),
     .status_out             (icache_status_out), 
     .req_addr_out           (ic_req_addr_in),
-    .icache_axi_stall       (icache_axi_stall),
 
     .uc_addr                (icache_uc_addr),
     .icache_uc_req_i        (icache_uncache_req), 

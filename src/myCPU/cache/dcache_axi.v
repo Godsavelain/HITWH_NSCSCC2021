@@ -283,8 +283,9 @@ module dcache_axi
     // assign dcache_axi_stall = status_in[1] | (status_in[2] & !(rlast & read_handshake)) | read_req | write_req | 
     //                       status_in[4] | status_in[5] | (status_in[6] & !bvalid) 
     //                       ;
-    assign dcache_axi_stall = status_in[1] | (status_in[2] & !(rlast & read_handshake)) | 
-                          status_in[4] | status_in[5] | (status_in[6] & !bvalid);
+    // assign dcache_axi_stall = status_in[1] | (status_in[2] & !(rlast & read_handshake)) | 
+    //                       status_in[4] | status_in[5] | (status_in[6] & !bvalid);
+    assign dcache_axi_stall = 0;
 
     assign status_next = (status_in[0] | status_in == 0) && read_req    ? READ_REQUEST  :
                          status_in[1] && read_addr_handshake            ? READ_TRANSFER :

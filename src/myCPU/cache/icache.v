@@ -60,7 +60,7 @@ icache_s1 ICACHE_S1
 
     .old_virtual_addr_i(s1_virtual_addr_o),
     .old_physical_addr_i(s1_physical_addr_o),
-
+    .old_cached(s1_cached_o),
     
     .s1_rend_i(rend),
     .s1_cacheline_rdata_i(cacheline_rdata_i),

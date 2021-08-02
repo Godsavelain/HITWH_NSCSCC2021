@@ -1,4 +1,11 @@
-TO DO LIST：优化cache，合并burst写与burst读请求
+TO DO LIST：
+
+###### 2021.8.3
+
+* 将icache_axi_stall于dcache_axi_stall去除，现在所有的暂停信号统一由cache发出
+* 合并icache中cache_req与uncache_req的状态机（由于忘记修改icache_s1中wea的条件导致uncache访问也会更新cache的内容，此bug已经修复）
+* 主频提升至115M，性能分56.7分
+* 此版本作为最终初赛提交版本
 
 ###### 2021.7.31
 

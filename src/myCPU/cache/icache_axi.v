@@ -50,7 +50,6 @@ module icache_axi
     input  wire [31: 0]  req_addr_in, //to hold the uncache req addr 
     output wire [ 3: 0]  status_out, 
     output wire [31: 0]  req_addr_out, 
-    output wire          icache_axi_stall,
 
     //for uncache
     input  wire [31: 0]         uc_addr, 
@@ -183,8 +182,7 @@ module icache_axi
     DFFRE #(.WIDTH(32))     req_next            (.d(req_addr_next), .q(req_addr_out), .en(1), .clk(aclk), .rst_n(aresetn));
    
 
-   assign icache_axi_stall = status_in[1] | status_in[2] ;
-   
+   // assign icache_axi_stall = status_in[1] | status_in[2] ;
    //burst count
    reg [2:0] counter;
    always @(posedge aclk, negedge aresetn) begin
@@ -229,7 +227,7 @@ module icache_axi
         assign  icache_axi_data_o[255:224] = rdata ;
 
 
-    assign icache_axi_rend = ca_req & rlast & read_handshake;
+    assign icache_axi_rend = rlast & read_handshake;
 
 //transfer data to cpu
    always @(posedge aclk, negedge aresetn) begin

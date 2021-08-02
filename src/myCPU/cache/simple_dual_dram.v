@@ -33,7 +33,7 @@ assign data_out = !val ? 0 :TAG[addrb];
         end
     end
 
-        always @(posedge clka) begin 
+    always @(posedge clka) begin 
         if(|wea)  
         begin 
         TAG[addra][31: 0] <= dina[31: 0];
